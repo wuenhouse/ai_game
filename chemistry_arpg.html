@@ -10,6 +10,9 @@
     html, body { width: 100%; height: 100dvh; overflow: hidden; background: #090d16; color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; }
     #app { display: flex; flex-direction: column; height: 100dvh; max-width: 560px; margin: 0 auto; }
+    @media (min-width: 760px) and (hover: hover) and (pointer: fine) {
+      #app { max-width: 800px; }
+    }
     /* HUD bar */
     .hud { padding: 8px 12px; background: #0f172a; border-bottom: 1px solid #1e293b;
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; z-index: 5; }
@@ -315,9 +318,16 @@
   }
 
   // === PLAYER ===
+  const PLAYER_HALF_WIDTH = 0.35;
+  const WALK_FRAME_DISTANCE = 0.32; // map tiles per animation frame
+  const CONTACT_PUSH_TIME = 0.16;
+  const CONTACT_PUSH_DISTANCE = 0.65;
+  const HURT_POSE_TIME = 0.22;
+
   let player = { x: 0, y: 0, dir: 'down', hp: 50, maxHp: 50, mp: 20, maxMp: 20,
     atk: 5, level: 1, exp: 0, speed: 4.5,
-    atkTimer: 0, attackDir: 'down', shotTimer: 0, invincible: 0, shieldTimer: 0 };
+    atkTimer: 0, attackDir: 'down', shotTimer: 0, invincible: 0, shieldTimer: 0,
+    walkPhase: 0, walking: false, hurtTimer: 0, hurtDir: 'down', knockback: null, impactOrigin: null };
 
   const keys = { up: false, down: false, left: false, right: false, attack: false, shoot: false };
 
@@ -332,6 +342,16 @@
     castVisuals = [];
     player.invincible = 0;
     player.shieldTimer = 0;
+    resetPlayerMotion();
+  }
+
+  function resetPlayerMotion() {
+    player.walkPhase = 0;
+    player.walking = false;
+    player.hurtTimer = 0;
+    player.hurtDir = player.dir;
+    player.knockback = null;
+    player.impactOrigin = null;
   }
 
   function isSolid(col, row) {
@@ -340,19 +360,11 @@
     return t === TILE.WALL || t === TILE.ROCK || t === TILE.WATER;
   }
 
-  function updatePlayer(dt) {
-    let dx = 0, dy = 0;
-    if (keys.up) { dy = -1; player.dir = 'up'; }
-    if (keys.down) { dy = 1; player.dir = 'down'; }
-    if (keys.left) { dx = -1; player.dir = 'left'; }
-    if (keys.right) { dx = 1; player.dir = 'right'; }
-    // Normalize diagonal
-    if (dx && dy) { dx *= 0.707; dy *= 0.707; }
-    const spd = player.speed * dt;
-    const nx = player.x + dx * spd;
-    const ny = player.y + dy * spd;
-    const halfW = 0.35;
-    // X collision
+  // Voluntary movement and knockback share the same terrain collision.
+  function movePlayerBy(dx, dy) {
+    const startX = player.x, startY = player.y;
+    const nx = startX + dx, ny = startY + dy;
+    const halfW = PLAYER_HALF_WIDTH;
     if (dx !== 0) {
       const testX = dx > 0 ? nx + halfW : nx - halfW;
       if (!isSolid(Math.floor(testX), Math.floor(player.y - halfW)) &&
@@ -360,7 +372,6 @@
         player.x = nx;
       }
     }
-    // Y collision
     if (dy !== 0) {
       const testY = dy > 0 ? ny + halfW : ny - halfW;
       if (!isSolid(Math.floor(player.x - halfW), Math.floor(testY)) &&
@@ -368,41 +379,90 @@
         player.y = ny;
       }
     }
-    // Room transition — check player is at an exit tile and near the edge
-    const pc = Math.floor(player.x), pr = Math.floor(player.y);
-    if (player.x < 0.5 && (pr === 5 || pr === 6)) {
-      if (transitionRoom(-1, 0)) player.x = COLS - 1.5;
-    } else if (player.x > COLS - 0.5 && (pr === 5 || pr === 6)) {
-      if (transitionRoom(1, 0)) player.x = 1.5;
-    } else if (player.y < 0.5 && (pc === 7 || pc === 8)) {
-      if (transitionRoom(0, -1)) player.y = ROWS - 1.5;
-    } else if (player.y > ROWS - 0.5 && (pc === 7 || pc === 8)) {
-      if (transitionRoom(0, 1)) player.y = 1.5;
+    return Math.hypot(player.x - startX, player.y - startY);
+  }
+
+  function updatePlayer(dt) {
+    player.atkTimer = Math.max(0, player.atkTimer - dt);
+    player.shotTimer = Math.max(0, player.shotTimer - dt);
+    player.invincible = Math.max(0, player.invincible - dt);
+    player.shieldTimer = Math.max(0, player.shieldTimer - dt);
+    player.hurtTimer = Math.max(0, player.hurtTimer - dt);
+    if (!player.hurtTimer) player.impactOrigin = null;
+
+    const push = player.knockback;
+    if (push) {
+      // Integrate a decelerating shove; short steps keep it from tunnelling
+      // through solid tiles. It never activates a room exit.
+      const before = 1 - push.elapsed / CONTACT_PUSH_TIME;
+      push.elapsed = Math.min(CONTACT_PUSH_TIME, push.elapsed + dt);
+      const after = 1 - push.elapsed / CONTACT_PUSH_TIME;
+      const distance = CONTACT_PUSH_DISTANCE * (before * before - after * after);
+      const count = Math.max(1, Math.ceil(distance / 0.18));
+      for (let i = 0; i < count; i++) {
+        movePlayerBy(push.x * distance / count, push.y * distance / count);
+      }
+      if (push.elapsed >= CONTACT_PUSH_TIME) player.knockback = null;
+      return;
     }
-    // Timers
-    if (player.atkTimer > 0) player.atkTimer -= dt;
-    if (player.shotTimer > 0) player.shotTimer -= dt;
-    if (player.invincible > 0) player.invincible -= dt;
-    if (player.shieldTimer > 0) player.shieldTimer -= dt;
+
+    let dx = 0, dy = 0;
+    if (keys.up) { dy = -1; player.dir = 'up'; }
+    if (keys.down) { dy = 1; player.dir = 'down'; }
+    if (keys.left) { dx = -1; player.dir = 'left'; }
+    if (keys.right) { dx = 1; player.dir = 'right'; }
+    if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+    const spd = player.speed * dt;
+    const distance = movePlayerBy(dx * spd, dy * spd);
+    player.walking = distance >= 0.0001;
+    player.walkPhase = player.walking ? (player.walkPhase + distance / WALK_FRAME_DISTANCE) % 4 : 0;
+
+    // Only voluntary input toward the exit can change rooms. Check even if
+    // the outer boundary blocked movement after a shove reached the doorway.
+    const pc = Math.floor(player.x), pr = Math.floor(player.y);
+    let movedRoom = false;
+    if (player.x < 0.5 && (pr === 5 || pr === 6) && dx < 0) {
+      if ((movedRoom = transitionRoom(-1, 0))) player.x = COLS - 1.5;
+    } else if (player.x > COLS - 0.5 && (pr === 5 || pr === 6) && dx > 0) {
+      if ((movedRoom = transitionRoom(1, 0))) player.x = 1.5;
+    } else if (player.y < 0.5 && (pc === 7 || pc === 8) && dy < 0) {
+      if ((movedRoom = transitionRoom(0, -1))) player.y = ROWS - 1.5;
+    } else if (player.y > ROWS - 0.5 && (pc === 7 || pc === 8) && dy > 0) {
+      if ((movedRoom = transitionRoom(0, 1))) player.y = 1.5;
+    }
+    if (movedRoom) resetPlayerMotion();
   }
 
   const DIR_ARROWS = { up: '▲', down: '▼', left: '◀', right: '▶' };
   const DIR_FRAME = { down: 0, left: 1, right: 2, up: 3 };
   const DIR_ANGLE = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
   const AMMO_FRAME = { H: 1, O: 2, C: 3, Na: 4, Cl: 5, Ca: 6 };
+  const HERO_VISUAL_SCALE = 1.18;
 
   function drawPlayer() {
     const px = Math.round(player.x * tileSize);
     const py = Math.round(player.y * tileSize);
-    const swinging = player.atkTimer > 0.15;
-    const dir = swinging ? player.attackDir : player.dir;
+    const hurt = player.hurtTimer > 0;
+    const swinging = !hurt && player.atkTimer > 0.15;
+    const dir = hurt ? player.hurtDir : swinging ? player.attackDir : player.dir;
     const frame = swinging ? (player.atkTimer > 0.25 ? 1 : 2) : player.shotTimer > 0 ? 1 : 0;
     const scale = tileSize / 32;
     const flashing = player.invincible > 0 && Math.floor(player.invincible * 16) % 2 !== 0;
     ctx.save();
-    if (flashing) ctx.globalAlpha = 0.55;
-    const drawn = drawArt(heroArt, frame * 4 + DIR_FRAME[dir],
-      px - 20 * scale, py - 26 * scale, 40 * scale, 40 * scale);
+    if (flashing) ctx.globalAlpha = hurt ? 0.82 : 0.55;
+    // Both atlases share the same relative foot anchor. Enlarge around the
+    // feet (not the center) so the player stays planted on the same tile.
+    const size = Math.max(1, Math.round(40 * scale * HERO_VISUAL_SCALE));
+    const footY = py + Math.round(8 * scale);
+    const left = px - Math.round(size / 2);
+    const top = footY - Math.round(size * 0.85);
+    const column = DIR_FRAME[dir];
+    const spriteFrame = frame * 4 + column;
+    const drawn = (hurt && drawArt(heroHurtArt, column, left, top, size, size))
+      || (!hurt && frame === 0 && player.walking &&
+        drawArt(heroWalkArt, Math.floor(player.walkPhase) * 4 + column, left, top, size, size))
+      || drawArt(heroHiResArt, spriteFrame, left, top, size, size)
+      || drawArt(heroArt, spriteFrame, left, top, size, size);
     ctx.restore();
     if (!drawn) {
       const s = tileSize * 0.8;
@@ -431,7 +491,7 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const WORLD_ZOOM = 2;
-  let tileSize = 32;
+  let tileSize = 32, viewWidth = COLS * 32, viewHeight = ROWS * 32;
 
   function loadArt(file, cell, cols, rows) {
     const img = new Image();
@@ -441,6 +501,9 @@
 
   const terrainArt = loadArt('terrain.png', 32, 8, 1);
   const heroArt = loadArt('hero.png', 40, 4, 3);
+  const heroHiResArt = loadArt('hero-hd.png', 120, 4, 3);
+  const heroWalkArt = loadArt('hero-walk.png', 120, 4, 4);
+  const heroHurtArt = loadArt('hero-hurt.png', 120, 4, 1);
   const combatArt = loadArt('combat.png', 48, 4, 3);
 
   function drawArt(art, frame, x, y, w, h) {
@@ -479,8 +542,15 @@
     const maxH = stage.clientHeight - 8;
     const fittedTileSize = Math.max(1, Math.floor(Math.min(maxW / COLS, maxH / ROWS)));
     tileSize = fittedTileSize * WORLD_ZOOM;
-    canvas.width = fittedTileSize * COLS;
-    canvas.height = fittedTileSize * ROWS;
+    viewWidth = fittedTileSize * COLS;
+    viewHeight = fittedTileSize * ROWS;
+    // Backing pixels can be denser than CSS pixels; keep camera math in CSS pixels.
+    const density = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    canvas.style.width = viewWidth + 'px';
+    canvas.style.height = viewHeight + 'px';
+    canvas.width = Math.round(viewWidth * density);
+    canvas.height = Math.round(viewHeight * density);
+    ctx.setTransform(canvas.width / viewWidth, 0, 0, canvas.height / viewHeight, 0, 0);
     ctx.imageSmoothingEnabled = false;
   }
 
@@ -713,7 +783,7 @@
       }
       // Contact damage
       if (dist < 0.7 && player.invincible <= 0) {
-        damagePlayer(m.atk);
+        damagePlayer(m.atk, m);
       }
       // Boss shoots
       if (m.type === 'boss') {
@@ -768,7 +838,7 @@
     });
   }
 
-  function damagePlayer(amount) {
+  function damagePlayer(amount, contactSource = null) {
     if (player.shieldTimer > 0 || player.invincible > 0) return;
     player.hp -= amount;
     player.invincible = 0.5;
@@ -776,6 +846,28 @@
     if (player.hp <= 0) {
       player.hp = 0;
       playerDeath();
+      return;
+    }
+    player.hurtTimer = HURT_POSE_TIME;
+    player.hurtDir = player.dir;
+    if (contactSource) {
+      let dx = player.x - contactSource.x, dy = player.y - contactSource.y;
+      const length = Math.hypot(dx, dy);
+      if (length > 0.0001) {
+        dx /= length;
+        dy /= length;
+        player.hurtDir = Math.abs(dx) > Math.abs(dy)
+          ? (dx > 0 ? 'left' : 'right') : (dy > 0 ? 'up' : 'down');
+      } else {
+        // If positions overlap exactly, recoil away from the current facing.
+        const angle = DIR_ANGLE[player.dir];
+        dx = -Math.cos(angle);
+        dy = -Math.sin(angle);
+      }
+      player.walking = false;
+      player.walkPhase = 0;
+      player.knockback = { x: dx, y: dy, elapsed: 0 };
+      player.impactOrigin = { x: player.x, y: player.y };
     }
   }
 
@@ -923,11 +1015,16 @@
   }
 
   function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, viewWidth, viewHeight);
     if (state.screen === 'play') {
-      // Follow the player while keeping the viewport inside the room.
-      const cameraX = Math.max(0, Math.min(player.x * tileSize - canvas.width / 2, COLS * tileSize - canvas.width));
-      const cameraY = Math.max(0, Math.min(player.y * tileSize - canvas.height / 2, ROWS * tileSize - canvas.height));
+      // Briefly hold at the contact point so the hero visibly recoils,
+      // then ease the framing back onto the hero.
+      const origin = player.impactOrigin;
+      const hold = origin ? Math.min(1, player.hurtTimer / 0.12) : 0;
+      const focusX = origin ? player.x + (origin.x - player.x) * hold : player.x;
+      const focusY = origin ? player.y + (origin.y - player.y) * hold : player.y;
+      const cameraX = Math.max(0, Math.min(focusX * tileSize - viewWidth / 2, COLS * tileSize - viewWidth));
+      const cameraY = Math.max(0, Math.min(focusY * tileSize - viewHeight / 2, ROWS * tileSize - viewHeight));
       ctx.save();
       ctx.translate(-Math.round(cameraX), -Math.round(cameraY));
       drawRoom();
@@ -1221,6 +1318,7 @@
 
   function returnToTitle() {
     state.screen = 'title';
+    resetPlayerMotion();
     player.hp = player.maxHp;
     player.mp = player.maxMp;
     projectiles = []; traps = []; acidZones = []; smokeTimer = 0;
@@ -1464,7 +1562,7 @@
   // === MINIMAP ===
   function drawMinimap() {
     const ms = 8;
-    const ox = canvas.width - MAP_W * ms - 8;
+    const ox = viewWidth - MAP_W * ms - 8;
     const oy = 8;
     ctx.fillStyle = 'rgba(15,23,42,0.8)';
     ctx.fillRect(ox - 2, oy - 2, MAP_W * ms + 4, MAP_H * ms + 4);
