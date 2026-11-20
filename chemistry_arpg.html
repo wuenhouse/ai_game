@@ -836,6 +836,133 @@
     updateHUD();
   });
 
+  // === SAVE (stub, Task 8) ===
+  function saveGame() {}
+
+  // === CODEX & SKILLS ===
+  let codex = [];
+  let unlockedSkills = [];
+  let equippedSkills = [null, null, null, null];
+
+  function synthesize(recipeId) {
+    const recipe = RECIPES.find(r => r.id === recipeId);
+    if (!recipe) return;
+    // Check inventory
+    for (const [sym, count] of Object.entries(recipe.req)) {
+      if ((inventory[sym] || 0) < count) return;
+    }
+    // Consume
+    for (const [sym, count] of Object.entries(recipe.req)) inventory[sym] -= count;
+    // Unlock
+    const firstTime = !codex.includes(recipeId);
+    if (firstTime) {
+      codex.push(recipeId);
+      unlockedSkills.push(recipeId);
+      // Auto-equip to first empty slot
+      const emptySlot = equippedSkills.indexOf(null);
+      if (emptySlot >= 0) equippedSkills[emptySlot] = recipeId;
+      gainExp(recipe.pts);
+      showToast(`圖鑑解鎖：${recipe.formula} ${recipe.name}！`);
+    } else {
+      gainExp(50);
+      showToast(`合成 ${recipe.formula} +50 EXP`);
+    }
+    updateElemBar();
+    updateHUD();
+    saveGame();
+    renderInventoryTab();
+    renderCodexTab();
+  }
+
+  // Expose synth function for onclick
+  window._synth = synthesize;
+
+  function openMenu(tab = 'inv') {
+    state.paused = true;
+    document.getElementById('menu-modal').classList.add('open');
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    document.getElementById('tab-inv').style.display = tab === 'inv' ? '' : 'none';
+    document.getElementById('tab-codex').style.display = tab === 'codex' ? '' : 'none';
+    document.getElementById('tab-status').style.display = tab === 'status' ? '' : 'none';
+    if (tab === 'inv') renderInventoryTab();
+    else if (tab === 'codex') renderCodexTab();
+    else renderStatusTab();
+  }
+
+  function closeMenu() {
+    state.paused = false;
+    document.getElementById('menu-modal').classList.remove('open');
+  }
+
+  function renderInventoryTab() {
+    const el = document.getElementById('tab-inv');
+    let html = '<h3 style="margin-bottom:10px;">元素庫存</h3>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">';
+    ELEMENTS.forEach(e => {
+      html += `<div style="padding:8px 14px;background:#1e293b;border-radius:10px;text-align:center;">` +
+        `<div style="color:${e.color};font-size:20px;font-weight:800;">${e.sym}</div>` +
+        `<div style="color:#94a3b8;font-size:12px;">${e.name}</div>` +
+        `<div style="color:#f8fafc;font-weight:700;">${inventory[e.sym] || 0}</div></div>`;
+    });
+    html += '</div><h3 style="margin-bottom:10px;">合成配方</h3>';
+    RECIPES.forEach(r => {
+      const reqStr = Object.entries(r.req).map(([k, v]) => `${k}×${v}`).join(' + ');
+      const canSynth = Object.entries(r.req).every(([sym, count]) => (inventory[sym] || 0) >= count);
+      html += `<div class="recipe-row"><div><strong style="color:#38bdf8;">${r.formula}</strong> ${r.name}` +
+        `<div style="font-size:11px;color:#94a3b8;">${reqStr}</div></div>` +
+        `<button class="synth-btn" ${canSynth ? '' : 'disabled'} onclick="window._synth('${r.id}')">` +
+        `${codex.includes(r.id) ? '再合成' : '合成'}</button></div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  function renderCodexTab() {
+    const el = document.getElementById('tab-codex');
+    let html = '<h3 style="margin-bottom:10px;">化學圖鑑</h3>';
+    RECIPES.forEach(r => {
+      const unlocked = codex.includes(r.id);
+      html += `<div class="recipe-row ${unlocked ? '' : 'locked'}">` +
+        `<div><strong style="color:${unlocked ? '#38bdf8' : '#64748b'};">${r.formula}</strong> ` +
+        `${unlocked ? r.name : '???'}` +
+        `<div style="font-size:11px;color:#94a3b8;">${unlocked ? r.desc : '尚未解鎖'}</div></div>` +
+        `<div style="color:${unlocked ? '#22c55e' : '#64748b'};font-weight:700;">${unlocked ? '✓ 已收集' : '🔒'}</div></div>`;
+    });
+    el.innerHTML = html;
+  }
+
+  function renderStatusTab() {
+    const needed = player.level * player.level * 50;
+    const el = document.getElementById('tab-status');
+    el.innerHTML = `<h3 style="margin-bottom:10px;">角色狀態</h3>` +
+      `<div class="recipe-row"><span>等級</span><span style="color:#38bdf8;font-weight:700;">Lv.${player.level}</span></div>` +
+      `<div class="recipe-row"><span>經驗值</span><span style="color:#fbbf24;">${player.exp} / ${needed}</span></div>` +
+      `<div class="recipe-row"><span>HP</span><span>${player.hp} / ${player.maxHp}</span></div>` +
+      `<div class="recipe-row"><span>MP</span><span>${player.mp} / ${player.maxMp}</span></div>` +
+      `<div class="recipe-row"><span>攻擊力</span><span>${player.atk}</span></div>` +
+      `<div class="recipe-row"><span>已收集配方</span><span>${codex.length} / ${RECIPES.length}</span></div>`;
+  }
+
+  // === MENU BUTTON HANDLERS ===
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => openMenu(btn.dataset.tab));
+  });
+  document.getElementById('btn-menu').addEventListener('click', () => openMenu());
+  document.getElementById('btn-close-menu').addEventListener('click', closeMenu);
+  document.getElementById('btn-title-codex').addEventListener('click', () => openMenu('codex'));
+  document.getElementById('btn-title-status').addEventListener('click', () => openMenu('status'));
+
+  // === MENU KEYBOARD SHORTCUTS ===
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'i' || e.key === 'I' || e.key === 'Tab') {
+      e.preventDefault();
+      if (document.getElementById('menu-modal').classList.contains('open')) closeMenu();
+      else if (state.screen === 'play') openMenu();
+    }
+    if (e.key === 'Escape') closeMenu();
+  });
+
   // === INIT ===
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
