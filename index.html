@@ -31,9 +31,18 @@
     .container {
       width: 100%;
       max-width: 480px;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
       gap: 20px;
+    }
+    header, footer { grid-column: 1 / -1; }
+    @media (min-width: 960px) {
+      body { padding: 40px 32px; }
+      .container {
+        max-width: 1200px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+      }
     }
     header {
       text-align: center;
@@ -63,6 +72,7 @@
       line-height: 1.5;
     }
     .game-card {
+      min-width: 0;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -70,7 +80,6 @@
       border: 1px solid var(--card-border);
       border-radius: 20px;
       padding: 20px;
-      text-decoration: none;
       color: inherit;
       transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
@@ -128,11 +137,14 @@
       color: #c084fc;
     }
     .card-desc {
+      flex: 1;
       font-size: 14px;
       color: var(--muted);
       line-height: 1.5;
     }
     .play-btn {
+      display: block;
+      text-decoration: none;
       margin-top: 4px;
       width: 100%;
       padding: 12px;
@@ -152,6 +164,43 @@
       color: #64748b;
       margin-top: 8px;
     }
+    .feedback-entry, .feedback-action, .feedback-close {
+      font: inherit; cursor: pointer; color: var(--text); border: 1px solid #334155;
+      background: #1e293b; border-radius: 10px; padding: 10px 14px;
+    }
+    .feedback-entry { width: 100%; font-size: 14px; }
+    .feedback-entry:hover, .feedback-action:hover { border-color: var(--accent-1); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent-1); outline-offset: 3px; }
+    .feedback-dialog {
+      margin: auto; width: min(680px, calc(100% - 32px)); max-height: 88dvh;
+      overflow-y: auto; padding: 24px; color: var(--text); background: var(--card);
+      border: 1px solid var(--card-border); border-radius: 20px;
+    }
+    .feedback-dialog::backdrop { background: rgba(2, 6, 23, 0.8); }
+    .feedback-heading { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+    .feedback-heading h2 { font-size: 20px; line-height: 1.5; }
+    .feedback-close { flex-shrink: 0; }
+    .feedback-dialog form { display: grid; gap: 12px; }
+    .feedback-dialog [hidden], .feedback-dialog[data-posting="paused"] .discussion-reply-form { display: none; }
+    .feedback-privacy { color: #fde68a; background: #332b1c; border-radius: 8px; padding: 8px 10px;
+      font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+    .feedback-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .feedback-dialog label { display: grid; gap: 6px; font-size: 14px; }
+    .feedback-dialog input, .feedback-dialog textarea {
+      width: 100%; min-width: 0; padding: 10px; font: inherit; color: var(--text);
+      background: var(--bg); border: 1px solid #475569; border-radius: 8px;
+      user-select: text; -webkit-user-select: text;
+    }
+    .feedback-dialog textarea { resize: vertical; }
+    .feedback-status { margin: 16px 0; line-height: 1.6; color: var(--muted); }
+    .discussion-message { border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; margin-top: 12px; }
+    .discussion-meta { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .discussion-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; margin: 10px 0; }
+    .discussion-message summary { cursor: pointer; color: var(--accent-1); padding: 8px 0; }
+    .discussion-replies { margin-bottom: 12px; }
+    .discussion-replies .discussion-message { background: var(--bg); }
+    @media (max-width: 480px) { .feedback-dialog { padding: 16px; } }
   </style>
 </head>
 <body>
@@ -162,7 +211,7 @@
       <p class="subtitle">支援手機直式單手觸控與電腦滑鼠鍵盤操作，點擊下方選擇遊戲開始實驗！</p>
     </header>
 
-    <a href="./chemistry_arpg.html" class="game-card">
+    <article class="game-card">
       <div class="card-top">
         <div class="icon-box hunter-icon" aria-hidden="true"></div>
         <div>
@@ -171,10 +220,11 @@
         </div>
       </div>
       <p class="card-desc">深入地下化學實驗室，用短杖近戰、發射六種元素彈，收集元素並合成技能。</p>
-      <div class="play-btn">開始探索 →</div>
-    </a>
+      <a class="play-btn" href="./chemistry_arpg.html">開始探索 →</a>
+      <button type="button" class="feedback-entry" data-feedback-game="chemistry_arpg">💬 意見與討論</button>
+    </article>
 
-    <a href="./chemistry_rubiks_cube.html" class="game-card">
+    <article class="game-card">
       <div class="card-top">
         <div class="icon-box">🧊</div>
         <div>
@@ -183,10 +233,11 @@
         </div>
       </div>
       <p class="card-desc">單指滑動方塊轉動切片層、滑動背景旋轉視角。在任意一面湊齊 H₂O、CO₂、CaCO₃ 等化合物觸發粒子反應！</p>
-      <div class="play-btn">開始遊玩 3D 魔術方塊 →</div>
-    </a>
+      <a class="play-btn" href="./chemistry_rubiks_cube.html">開始遊玩 3D 魔術方塊 →</a>
+      <button type="button" class="feedback-entry" data-feedback-game="chemistry_rubiks_cube">💬 意見與討論</button>
+    </article>
 
-    <a href="./chemistry_tetris.html" class="game-card purple">
+    <article class="game-card purple">
       <div class="card-top">
         <div class="icon-box">🧪</div>
         <div>
@@ -195,10 +246,36 @@
         </div>
       </div>
       <p class="card-desc">經典消行結合相鄰原子自動合成引爆！支援底部虛擬按鍵與棋盤手勢滑動，挑戰連續重力反應 Combo。</p>
-      <div class="play-btn">開始遊玩化學俄羅斯方塊 →</div>
-    </a>
+      <a class="play-btn" href="./chemistry_tetris.html">開始遊玩化學俄羅斯方塊 →</a>
+      <button type="button" class="feedback-entry" data-feedback-game="chemistry_tetris">💬 意見與討論</button>
+    </article>
 
     <footer>建議於手機瀏覽器使用「加入主畫面」獲得全螢幕沉浸體驗</footer>
   </div>
+  <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-title">
+    <div class="feedback-heading">
+      <h2 id="feedback-title">意見與討論</h2>
+      <button type="button" id="feedback-close" class="feedback-close" aria-label="關閉意見與討論">關閉</button>
+    </div>
+    <p id="feedback-privacy" class="feedback-privacy">留言是公開的。請用暱稱，不要填自己或別人的真實姓名、學校、電話、地址或社群帳號等聯絡方式。</p>
+    <p id="feedback-paused" class="feedback-status" hidden>目前暫停發文與回覆，仍可看已發布的留言。</p>
+    <p id="feedback-cooldown" class="feedback-status" hidden></p>
+    <form id="feedback-form" novalidate aria-describedby="feedback-privacy">
+      <label for="feedback-author">你的暱稱（最多 20 字）
+        <input id="feedback-author" name="author" maxlength="20" autocomplete="nickname">
+      </label>
+      <label for="feedback-message">問題或意見（最多 1000 字）
+        <textarea id="feedback-message" name="message" rows="3" maxlength="1000"></textarea>
+      </label>
+      <button type="submit" class="feedback-action" disabled>發布主題</button>
+    </form>
+    <p id="feedback-status" class="feedback-status" role="status" aria-live="polite">讀取討論區中…</p>
+    <div class="feedback-actions">
+      <button type="button" id="feedback-refresh" class="feedback-action" hidden>重新整理討論</button>
+    </div>
+    <section id="feedback-list" aria-label="討論主題"></section>
+    <button type="button" id="feedback-older" class="feedback-action" hidden>載入更早的主題</button>
+  </dialog>
+  <script type="module" src="./js/feedback.js"></script>
 </body>
 </html>

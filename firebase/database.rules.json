@@ -1,0 +1,93 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "feedbackSettings": {
+      "postingEnabled": {
+        ".read": true
+      }
+    },
+    "feedbackThrottle": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && root.child('feedbackSettings').child('postingEnabled').val() !== false && newData.exists() && (!data.exists() || (data.child('at').isNumber() && now >= data.child('at').val() + 30000))",
+        ".validate": "newData.hasChildren(['at', 'game', 'thread', 'id']) && newData.child('thread').isString() && newData.child('id').isString() && (newData.child('game').val() === 'chemistry_arpg' || newData.child('game').val() === 'chemistry_rubiks_cube' || newData.child('game').val() === 'chemistry_tetris') && ((newData.child('thread').val() === '' && !root.child('feedback').child(newData.child('game').val()).child('threads').child(newData.child('id').val()).exists() && newData.parent().parent().child('feedback').child(newData.child('game').val()).child('threads').child(newData.child('id').val()).child('uid').val() === auth.uid) || (newData.child('thread').val() !== '' && !root.child('feedback').child(newData.child('game').val()).child('replies').child(newData.child('thread').val()).child(newData.child('id').val()).exists() && newData.parent().parent().child('feedback').child(newData.child('game').val()).child('replies').child(newData.child('thread').val()).child(newData.child('id').val()).child('uid').val() === auth.uid))",
+        "at": {
+          ".validate": "newData.isNumber() && newData.val() === now"
+        },
+        "game": {
+          ".validate": "newData.val() === 'chemistry_arpg' || newData.val() === 'chemistry_rubiks_cube' || newData.val() === 'chemistry_tetris'"
+        },
+        "thread": {
+          ".validate": "newData.isString() && (newData.val() === '' || newData.val().matches(/^[A-Za-z0-9_-]{1,128}$/))"
+        },
+        "id": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{1,128}$/)"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "feedback": {
+      "$game": {
+        ".validate": "$game === 'chemistry_arpg' || $game === 'chemistry_rubiks_cube' || $game === 'chemistry_tetris'",
+        "threads": {
+          ".read": "($game === 'chemistry_arpg' || $game === 'chemistry_rubiks_cube' || $game === 'chemistry_tetris') && query.orderByChild === 'createdAt' && query.limitToLast !== null && query.limitToLast > 0 && query.limitToLast <= 20",
+          ".indexOn": [
+            "createdAt"
+          ],
+          "$thread": {
+            ".write": "auth != null && root.child('feedbackSettings').child('postingEnabled').val() !== false && !data.exists() && newData.exists() && (!root.child('feedbackThrottle').child(auth.uid).exists() || (root.child('feedbackThrottle').child(auth.uid).child('at').isNumber() && now >= root.child('feedbackThrottle').child(auth.uid).child('at').val() + 30000)) && newData.parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('at').val() === now && newData.parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('game').val() === $game && newData.parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('thread').val() === '' && newData.parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('id').val() === $thread && newData.child('uid').val() === auth.uid",
+            ".validate": "newData.hasChildren(['author', 'message', 'uid', 'createdAt'])",
+            "author": {
+              ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+            },
+            "message": {
+              ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+            },
+            "uid": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() === now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "replies": {
+          "$thread": {
+            ".read": "($game === 'chemistry_arpg' || $game === 'chemistry_rubiks_cube' || $game === 'chemistry_tetris') && query.orderByChild === 'createdAt' && query.limitToLast !== null && query.limitToLast > 0 && query.limitToLast <= 20",
+            ".indexOn": [
+              "createdAt"
+            ],
+            "$reply": {
+              ".write": "auth != null && root.child('feedbackSettings').child('postingEnabled').val() !== false && !data.exists() && newData.exists() && root.child('feedback').child($game).child('threads').child($thread).exists() && (!root.child('feedbackThrottle').child(auth.uid).exists() || (root.child('feedbackThrottle').child(auth.uid).child('at').isNumber() && now >= root.child('feedbackThrottle').child(auth.uid).child('at').val() + 30000)) && newData.parent().parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('at').val() === now && newData.parent().parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('game').val() === $game && newData.parent().parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('thread').val() === $thread && newData.parent().parent().parent().parent().parent().child('feedbackThrottle').child(auth.uid).child('id').val() === $reply && newData.child('uid').val() === auth.uid",
+              ".validate": "newData.hasChildren(['author', 'message', 'uid', 'createdAt'])",
+              "author": {
+                ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+              },
+              "message": {
+                ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+              },
+              "uid": {
+                ".validate": "newData.val() === auth.uid"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}

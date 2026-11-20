@@ -10,6 +10,9 @@
     html, body { width: 100%; height: 100dvh; overflow: hidden; background: #090d16; color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; }
     #app { display: flex; flex-direction: column; height: 100dvh; max-width: 560px; margin: 0 auto; }
+    @media (min-width: 760px) and (hover: hover) and (pointer: fine) {
+      #app { max-width: 1440px; }
+    }
     /* HUD bar */
     .hud { padding: 8px 12px; background: #0f172a; border-bottom: 1px solid #1e293b;
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; z-index: 5; }
@@ -25,25 +28,83 @@
     .elem-slot { color: #f8fafc; font: inherit; cursor: pointer; touch-action: manipulation; padding: 2px 8px; border-radius: 6px; background: #1e293b; border: 1px solid #334155; }
     .elem-slot.active { border-color: #fbbf24; background: #332800; }
     /* Canvas area */
-    .stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .play-area { display: flex; flex: 1; min-height: 0; }
+    .stage { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .desktop-help { display: none; }
+    @media (min-width: 760px) and (hover: hover) and (pointer: fine) {
+      .desktop-help { display: block; flex: 0 0 clamp(200px, 20vw, 260px); margin: 8px 12px 8px 8px;
+        padding: 18px 16px; overflow-y: auto; border: 1px solid #24334b; border-radius: 14px;
+        background: #0f172a; font-size: 13px; line-height: 1.6; }
+      .desktop-help h2 { color: #f8fafc; font-size: 18px; margin-bottom: 4px; }
+      .desktop-help h3 { color: #7dd3fc; font-size: 13px; margin: 18px 0 8px; }
+      .desktop-help p { color: #94a3b8; }
+      .desktop-help dl > div { display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 6px; padding: 9px 0; border-bottom: 1px solid #1e293b; }
+      .desktop-help dt { color: #cbd5e1; }
+      .desktop-help dd { color: #f8fafc; }
+      .desktop-help kbd { display: inline-block; min-width: 24px; padding: 1px 5px;
+        text-align: center; border: 1px solid #40516b; border-bottom-width: 3px; border-radius: 5px;
+        background: #1e293b; font: 12px ui-monospace, monospace; }
+      .desktop-help .help-start { color: #fbbf24; margin: 12px 0; }
+    }
+    @media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+      .play-area { display: grid; grid-template-columns: clamp(220px, 20vw, 280px) minmax(0, 1fr) clamp(220px, 20vw, 280px); }
+      .stage { grid-column: 2; }
+      .desktop-help { grid-column: 3; min-height: 0; }
+    }
+    @media (min-width: 760px) and (max-width: 1099px) and (hover: hover) and (pointer: fine) {
+      .play-area { flex-direction: column; }
+      .desktop-help { flex: 0 0 150px; margin: 4px 12px 8px; }
+    }
     canvas#game { background: #0f172a; border-radius: 4px; touch-action: none; image-rendering: pixelated; }
     /* Mobile controls */
     .controls { padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: #0f172a;
-      border-top: 1px solid #1e293b; display: flex; gap: 8px; z-index: 5; }
-    .ctrl-left { display: none; align-items: center; justify-content: center; width: 120px; height: 120px; position: relative; }
-    .ctrl-right { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin-left: auto; }
+      border-top: 1px solid #1e293b; display: flex; flex-shrink: 0; align-items: flex-end; gap: 8px; z-index: 5; }
+    .ctrl-left { display: none; flex: 0 0 120px; align-items: center; justify-content: center; width: 120px; height: 120px; margin-bottom: 8px; position: relative; }
+    #joystick { width: 120px; height: 120px; touch-action: none; }
+    .ctrl-right { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 8px; align-items: center; margin-left: auto; }
     .abtn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #334155; background: #1e293b;
       color: #f8fafc; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; }
     .abtn:active { background: #334155; }
     .abtn.atk { border-color: #ef4444; background: #450a0a; }
     .abtn.shoot { border-color: #3b82f6; background: #172554; }
-    .skill-row { display: flex; gap: 4px; }
-    .skill-btn { min-width: 48px; padding: 4px; height: 44px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
-      color: #94a3b8; font-size: 11px; font-weight: 700; touch-action: manipulation; }
+    .skill-row { display: flex; width: 100%; max-width: 480px; gap: 4px; }
+    .skill-btn { flex: 1; min-width: 0; padding: 4px; min-height: 44px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
+      color: #94a3b8; font-size: 10px; font-weight: 700; touch-action: manipulation; }
     .menu-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
       color: #fbbf24; font-size: 12px; font-weight: 700; touch-action: manipulation; }
     .skill-btn.selected { border-color: #fbbf24; background: #332800; box-shadow: 0 0 0 1px #fbbf24; }
+    .action-cluster { display: none; width: 156px; height: 138px; position: relative; }
+    .action-cluster .abtn { position: absolute; flex-direction: column; gap: 3px; }
+    .action-label { font-size: 14px; line-height: 1.2; }
+    .action-detail { font-size: 10px; font-weight: 600; line-height: 1.2; }
+    .action-cluster .atk { width: 80px; height: 80px; left: 0; bottom: 0; }
+    .action-cluster .cast { width: 80px; height: 80px; right: 0; top: 0;
+      border-color: #a78bfa; background: #2e1065; }
+    .action-cluster .shoot { width: 56px; height: 56px; right: 0; bottom: 0; }
+    .abtn.unavailable { opacity: 0.55; }
+    .abtn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .abtn:active { transform: scale(0.94); }
+    @media (max-width: 759px), (any-pointer: coarse) {
+      .ctrl-right { align-items: flex-end; }
+      .skill-row { max-width: 240px; }
+      .action-cluster { display: block; width: 196px; height: 174px; }
+      .action-cluster .atk, .action-cluster .cast { width: 96px; height: 96px; }
+      .action-cluster .shoot { width: 68px; height: 68px; }
+      .action-cluster .action-label { font-size: 16px; }
+    }
+    .touch-controls .ctrl-right { align-items: flex-end; }
+    .touch-controls .skill-row { max-width: 240px; }
+    .touch-controls .action-cluster { display: block; width: 196px; height: 174px; }
+    .touch-controls .action-cluster .atk, .touch-controls .action-cluster .cast { width: 96px; height: 96px; }
+    .touch-controls .action-cluster .shoot { width: 68px; height: 68px; }
+    @media (max-width: 360px) {
+      .action-cluster, .touch-controls .action-cluster { width: 188px; height: 162px; }
+      .action-cluster .atk, .action-cluster .cast,
+      .touch-controls .action-cluster .atk, .touch-controls .action-cluster .cast { width: 88px; height: 88px; }
+      .action-cluster .shoot, .touch-controls .action-cluster .shoot { width: 64px; height: 64px; }
+    }
     /* Modals */
     .modal { position: fixed; inset: 0; background: rgba(2,6,23,0.85); z-index: 50;
       display: none; align-items: center; justify-content: center; padding: 16px; }
@@ -56,7 +117,91 @@
     .tab-btn.active { background: #334155; color: #f8fafc; border-color: #38bdf8; }
     .recipe-row { display: flex; justify-content: space-between; align-items: center;
       padding: 10px; background: #1e293b; border-radius: 10px; margin-bottom: 6px; font-size: 13px; }
-    .recipe-row.locked { opacity: 0.4; }
+    #menu-modal .modal-card { max-width: 560px; height: min(80dvh, 720px);
+      display: flex; flex-direction: column; overflow: hidden; }
+    #menu-modal .tab-bar { flex-shrink: 0; }
+    #menu-modal .tab-btn { min-width: 0; min-height: 44px; white-space: nowrap; }
+    .menu-content { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+    #btn-close-menu { flex-shrink: 0; min-height: 44px; }
+    .periodic-legend { color: #a5b4c8; font-size: 11px; line-height: 1.7; margin: 0 0 8px; }
+    .periodic-legend strong { color: #7dd3fc; }
+    .periodic-scroll { overflow-x: auto; margin-bottom: 8px; padding-bottom: 6px; }
+    .inventory-elements { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .inventory-element { padding: 10px 4px; border: 1px solid #334155; border-top: 3px solid var(--element-color);
+      border-radius: 10px; background: #1e293b; text-align: center; line-height: 1.5; }
+    .inventory-symbol { color: #e0f2fe; font-size: 22px; font-weight: 800; }
+    .inventory-name { color: #94a3b8; font-size: 11px; }
+    .inventory-count { color: #f8fafc; font-size: 18px; font-weight: 800; }
+    .periodic-open { display: block; width: 100%; margin-bottom: 18px; padding: 12px; text-align: left;
+      border: 1px solid #334155; border-radius: 10px; background: #131e30; color: #7dd3fc; font: inherit; font-size: 12px; cursor: pointer; }
+    .periodic-open:focus-visible { outline: 2px solid #7dd3fc; }
+    @media (max-width: 420px) {
+      .inventory-elements { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .periodic-scroll:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -2px; }
+    .periodic-grid { display: grid; min-width: 480px; grid-template-columns: repeat(18, minmax(0, 1fr));
+      grid-template-rows: 14px repeat(7, 36px) 10px repeat(2, 36px); gap: 2px; }
+    .periodic-group { color: #64748b; font-size: 8px; text-align: center; }
+    .periodic-element { display: flex; position: relative; flex-direction: column; justify-content: center;
+      align-items: center; min-width: 0; border: 1px solid #263349; border-radius: 3px;
+      background: #131e30; color: #728197; line-height: 1; }
+    .periodic-number { position: absolute; top: 2px; left: 2px; font-size: 7px; }
+    .periodic-symbol { font-size: 12px; font-weight: 800; }
+    .periodic-element.in-game { border-color: #7dd3fc; background: #153447; color: #f0f9ff;
+      box-shadow: inset 0 0 0 1px rgba(125,211,252,0.2); }
+    .periodic-element.in-game .periodic-symbol { margin-top: 5px; }
+    .periodic-stock { font-size: 9px; margin-top: 3px; color: #a5f3fc; }
+    .periodic-series { color: #94a3b8; font-size: 9px; align-self: center; text-align: center; }
+    .periodic-source { display: block; color: #7dd3fc; font-size: 10px; margin-bottom: 16px; }
+    .codex-intro { margin: 8px 0 14px; color: #cbd5e1; font-size: 13px; line-height: 1.6; }
+    .codex-intro p + p { margin-top: 6px; }
+    .codex-card { margin-bottom: 8px; background: #131e33; border: 1px solid #334155; border-radius: 13px; }
+    .codex-trigger { width: 100%; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 7px 10px;
+      display: grid; grid-template-columns: 64px minmax(0, 1fr) auto;
+      gap: 9px; align-items: center; border-radius: 12px; }
+    .codex-trigger:hover { border-color: #387690; }
+    .codex-trigger:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -2px; }
+    .codex-icon { display: grid; place-items: center; width: 64px; height: 64px;
+      background: #1c2a41; border-radius: 9px; }
+    .codex-icon img { display: block; width: 56px; height: 56px; image-rendering: pixelated; }
+    .codex-main { display: block; line-height: 1.45; }
+    .codex-formula { color: #7dd3fc; font-size: 17px; margin-right: 5px; }
+    .codex-example { display: block; color: #cbd5e1; font-size: 12px; margin-top: 2px; }
+    .codex-side { display: grid; justify-items: end; gap: 3px; color: #cbd5e1; font-size: 11px; white-space: nowrap; }
+    .codex-side .collected { color: #86efac; }
+    .codex-chevron { color: #7dd3fc; line-height: 1; }
+    .codex-body { padding: 2px 12px 12px; color: #e2e8f0; font-size: 14px; line-height: 1.55; }
+    .codex-body p + p { margin-top: 7px; }
+    .codex-atoms { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0 9px; }
+    .codex-atoms span { background: #20324d; border-radius: 5px; padding: 2px 6px; font-size: 12px; }
+    .codex-note { color: #fde68a; }
+    .codex-skill { border-top: 1px solid #334155; margin-top: 9px; padding-top: 7px; color: #cbd5e1; }
+    .codex-source { display: inline-block; margin-top: 7px; color: #7dd3fc; font-size: 12px; }
+    @media (max-width: 370px) {
+      .codex-trigger { grid-template-columns: 50px minmax(0, 1fr) auto; gap: 6px; padding-inline: 6px; }
+      .codex-icon { width: 50px; height: 50px; }
+      .codex-icon img { width: 48px; height: 48px; }
+    }
+    .detail-dialog { margin: auto; width: min(560px, calc(100% - 24px)); max-height: 90dvh; padding: 0;
+      border: 1px solid #40516b; border-radius: 18px; color: #f8fafc; background: #0f172a; overflow: hidden; }
+    .detail-dialog[open] { display: flex; flex-direction: column; }
+    .detail-dialog::backdrop { background: rgba(2,6,23,0.7); }
+    .detail-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 16px 20px; border-bottom: 1px solid #24334b; }
+    .detail-header h2 { font-size: 20px; }
+    .detail-header button { min-width: 44px; min-height: 44px; padding: 4px; font-size: 24px; }
+    .detail-content { min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 20px; }
+    .detail-content .codex-body { padding: 0; }
+    .detail-hero { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    .detail-hero img { width: 80px; height: 80px; image-rendering: pixelated; }
+    .detail-footer { flex-shrink: 0; padding: 12px 20px; border-top: 1px solid #24334b; }
+    .detail-footer button { width: 100%; min-height: 44px; }
+    .detail-dialog.periodic-view { width: min(1080px, calc(100% - 24px)); }
+    .periodic-view .periodic-grid { min-width: 720px;
+      grid-template-rows: 18px repeat(7, 48px) 12px repeat(2, 48px); }
+    .periodic-view .periodic-symbol { font-size: 18px; }
+    .periodic-view .periodic-number { font-size: 10px; }
+    .periodic-view .periodic-stock { font-size: 12px; }
     .synth-btn { padding: 8px 16px; border-radius: 10px; border: none; background: #059669; color: #fff;
       font-weight: 700; font-size: 13px; }
     .synth-btn:disabled { background: #334155; color: #64748b; }
@@ -68,28 +213,69 @@
       background: linear-gradient(90deg, #0284c7, #2563eb); color: #fff; font-size: 18px; font-weight: 800; }
     .title-screen .sub-btn { padding: 10px 24px; border-radius: 10px; border: 1px solid #334155;
       background: #1e293b; color: #94a3b8; font-size: 14px; font-weight: 700; }
+    .title-screen { position: relative; isolation: isolate; min-height: 100dvh; height: auto; }
+    .title-back { position: absolute; top: max(16px, env(safe-area-inset-top));
+      left: max(16px, env(safe-area-inset-left)); z-index: 1; display: inline-flex;
+      align-items: center; min-height: 44px; padding: 10px 16px; border-radius: 12px;
+      border: 1px solid rgba(125,211,252,0.45); background: rgba(8,27,39,0.85);
+      color: #e0f2fe; text-decoration: none; font-size: 15px; font-weight: 700; }
+    .title-back:hover { background: #164e63; }
+    .title-back:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
+    .title-screen::before, .title-screen::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+    .title-screen::before { background: #09242d url('./assets/chem-arpg/title-adventure-desktop.png') center / cover no-repeat; }
+    .title-screen::after { background: linear-gradient(180deg, rgba(2,10,20,0.12), rgba(2,10,20,0.08) 55%, rgba(2,10,20,0.55)); }
+    .title-content { width: min(100%, 470px); display: flex; flex-direction: column; align-items: center; gap: 18px;
+      padding: 34px 30px; border: 1px solid rgba(125,211,252,0.28); border-radius: 28px;
+      background: linear-gradient(150deg, rgba(8,27,39,0.8), rgba(7,25,36,0.55));
+      box-shadow: 0 24px 80px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08); backdrop-filter: blur(8px); }
+    .title-kicker { color: #a5f3fc; letter-spacing: 0.18em; font-size: 12px; font-weight: 800; }
+    .title-screen h1 { font-size: clamp(38px, 5vw, 58px); letter-spacing: 0.06em; line-height: 1.15;
+      color: #fff3c4; text-shadow: 0 3px 24px rgba(251,191,36,0.25); }
+    .title-description { max-width: 330px; color: #d5e8ee; font-size: 14px; line-height: 1.8; }
+    #title-stats { color: #abc6d0; font-size: 12px; }
+    .title-screen .start-btn { width: 100%; min-height: 58px; margin-top: 4px; border: 1px solid #7dd3fc;
+      background: linear-gradient(100deg, #0284c7, #0369a1); box-shadow: 0 6px 28px rgba(14,165,233,0.3); }
+    .title-secondary { display: flex; width: 100%; gap: 10px; }
+    .title-secondary .sub-btn { flex: 1; min-height: 46px; padding: 10px; color: #d7edf4;
+      background: rgba(15,39,54,0.65); border-color: rgba(125,211,252,0.3); }
+    .title-content button:hover { filter: brightness(1.15); }
+    .title-content button:focus-visible { outline: 3px solid #fde68a; outline-offset: 4px; }
+    @media (max-width: 759px) {
+      .title-screen { justify-content: flex-start; padding: calc(80px + env(safe-area-inset-top)) 18px 24px; }
+      .title-screen::before { background-image: url('./assets/chem-arpg/title-adventure-mobile.png'); background-position: center; }
+      .title-content { gap: 14px; padding: 26px 22px; border-radius: 24px; }
+      .title-screen h1 { font-size: clamp(36px, 9vw, 46px); }
+    }
     /* Toast */
     #toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
       background: linear-gradient(90deg, #059669, #10b981); color: #fff; padding: 6px 16px;
       border-radius: 999px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none;
       transition: opacity 0.2s; z-index: 20; white-space: nowrap; box-shadow: 0 6px 15px rgba(16,185,129,0.4); }
     #toast.show { opacity: 1; }
-    /* Desktop: hide mobile controls */
-    @media (hover: none) and (pointer: coarse) { .ctrl-left { display: flex; } }
+    /* Narrow screens and touch-capable devices need movement controls. */
+    @media (max-width: 759px), (any-pointer: coarse) { .ctrl-left { display: flex; } }
+    .touch-controls .ctrl-left { display: flex; }
+    @media (max-width: 360px) {
+      .ctrl-left { flex-basis: 100px; width: 100px; height: 100px; }
+      #joystick { width: 100px; height: 100px; }
+    }
   </style>
 </head>
 <body>
 <div id="app">
   <!-- Title Screen -->
   <div class="title-screen" id="title-screen">
-    <div style="font-size:64px;">⚗️</div>
+    <a class="title-back" href="./index.html">← 回大廳</a>
+    <div class="title-content">
+    <span class="title-kicker">收集 · 合成 · 探索</span>
     <h1>元素獵人</h1>
-    <p style="color:#94a3b8;font-size:14px;">化學元素 ARPG — 收集元素、合成化合物、探索隨機地牢</p>
-    <div id="title-stats" style="color:#64748b;font-size:12px;"></div>
-    <button class="start-btn" id="btn-start">出發探索</button>
-    <div style="display:flex;gap:8px;">
+    <p class="title-description">帶上你的元素魔杖，走進神祕遺跡。<br>收集元素、合成化合物，發現化學的魔法！</p>
+    <div id="title-stats"></div>
+    <button class="start-btn" id="btn-start">出發探索 →</button>
+    <div class="title-secondary">
       <button class="sub-btn" id="btn-title-codex">圖鑑</button>
       <button class="sub-btn" id="btn-title-status">角色狀態</button>
+    </div>
     </div>
   </div>
   <!-- Game Screen -->
@@ -103,12 +289,33 @@
       <button class="menu-btn" id="btn-menu">選單</button>
     </div>
     <div class="elem-bar" id="elem-bar"></div>
+    <div class="play-area">
     <div class="stage" id="stage">
       <div id="toast"></div>
       <canvas id="game"></canvas>
     </div>
+    <aside class="desktop-help" aria-label="鍵盤操作說明">
+      <h2>操作指南</h2>
+      <p>探索開始後，就能用鍵盤操作。</p>
+      <p class="help-start">先試試 W A S D，或方向鍵移動！</p>
+      <dl>
+        <div><dt>移動</dt><dd><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ／ ↑ ↓ ← →</dd></div>
+        <div><dt>普通攻擊</dt><dd><kbd>Z</kbd> ／ <kbd>Space</kbd></dd></div>
+        <div><dt>元素彈</dt><dd><kbd>F</kbd></dd></div>
+        <div><dt>施放選中技能</dt><dd><kbd>X</kbd></dd></div>
+        <div><dt>切換選中技能</dt><dd><kbd>C</kbd></dd></div>
+        <div><dt>直接施放技能</dt><dd><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd></dd></div>
+        <div><dt>開啟選單</dt><dd><kbd>I</kbd> ／ <kbd>Tab</kbd></dd></div>
+        <div><dt>關閉選單</dt><dd><kbd>Esc</kbd></dd></div>
+      </dl>
+      <h3>元素與技能</h3>
+      <p>點上方元素欄切換彈種，發射會消耗元素。靠近掉落的元素即可拾取。</p>
+      <h3>先選招，再施放</h3>
+      <p>點下方技能格只會選招，按 X 才施放。首次在背包合成化合物，可解鎖技能；施放需要 MP。</p>
+    </aside>
+    </div>
     <div class="controls" id="mobile-controls">
-      <div class="ctrl-left"><canvas id="joystick" width="120" height="120"></canvas></div>
+      <div class="ctrl-left"><canvas id="joystick" width="120" height="120" aria-label="移動搖桿：拖曳控制方向，放開停止"></canvas></div>
       <div class="ctrl-right">
         <div class="skill-row">
           <button class="skill-btn" id="sk1">技1</button>
@@ -116,9 +323,16 @@
           <button class="skill-btn" id="sk3">技3</button>
           <button class="skill-btn" id="sk4">技4</button>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="abtn atk" id="btn-atk">⚔️</button>
-          <button class="abtn shoot" id="btn-shoot" title="發射元素彈（點擊上方元素欄切換彈藥）" aria-label="發射元素彈">🔵</button>
+        <div class="action-cluster" role="group" aria-label="戰鬥操作">
+          <button type="button" class="abtn atk" id="btn-atk" aria-label="普通攻擊">
+            <span aria-hidden="true">⚔️</span><span class="action-label">普攻</span>
+          </button>
+          <button type="button" class="abtn cast" id="btn-skill" aria-label="施放選取技能">
+            <span class="action-label">技能</span><span class="action-detail">先合成解鎖</span>
+          </button>
+          <button type="button" class="abtn shoot" id="btn-shoot" title="發射元素彈（點擊上方元素欄切換彈藥）" aria-label="發射元素彈">
+            <span class="action-label">元素彈</span><span class="action-detail">H · 0</span>
+          </button>
         </div>
       </div>
     </div>
@@ -133,13 +347,23 @@
       <button class="tab-btn" data-tab="status">狀態</button>
       <button class="tab-btn" data-tab="help">操作</button>
     </div>
+    <div class="menu-content">
     <div id="tab-inv"></div>
     <div id="tab-codex" style="display:none"></div>
     <div id="tab-status" style="display:none"></div>
     <div id="tab-help" style="display:none"></div>
+    </div>
     <button class="menu-btn" id="btn-close-menu" style="width:100%;margin-top:12px;">關閉</button>
   </div>
 </div>
+<dialog class="detail-dialog" id="detail-dialog" aria-labelledby="detail-title">
+  <header class="detail-header">
+    <h2 id="detail-title"></h2>
+    <button type="button" class="menu-btn" data-close-detail aria-label="關閉詳細資料">×</button>
+  </header>
+  <div class="detail-content" id="detail-body"></div>
+  <footer class="detail-footer"><button type="button" class="menu-btn" data-close-detail id="detail-return">返回</button></footer>
+</dialog>
 <!-- Death Modal -->
 <div class="modal" id="death-modal">
   <div class="modal-card" style="text-align:center;">
@@ -192,6 +416,55 @@
     { id: 'HClO', formula: 'HClO', name: '酸霧', req: { H: 1, Cl: 1, O: 1 }, pts: 220, mp: 20, skill: 'acid',
       desc: '前方錐形持續傷害 3 秒' }
   ];
+
+  // Chemistry facts are separate from recipes and combat balance.
+  const COMPOUND_INFO = {
+    H2O: {
+      name: '水', example: '一杯水', type: '分子',
+      fact: '每個水分子有 2 個氫原子和 1 個氧原子。就算水結成冰，裡面的水分子仍是 H₂O。',
+      source: 'https://water.usgs.gov/edu/watercycle-kids-adv.html', agency: '美國地質調查局'
+    },
+    NaCl: {
+      name: '氯化鈉', example: '餐桌鹽', type: '離子化合物',
+      fact: '氯化鈉是食鹽的主要成分。鹽晶體裡，鈉離子和氯離子按 1：1 排列。',
+      source: 'https://pubchem.ncbi.nlm.nih.gov/compound/Sodium-Chloride', agency: 'PubChem'
+    },
+    CO2: {
+      name: '二氧化碳', example: '氣泡水裡的氣泡', type: '分子',
+      fact: '氣泡水裡溶有二氧化碳。開瓶後，部分二氧化碳跑出來，成為你看到的氣泡。氣體本身是看不見的。',
+      source: 'https://www.acs.org/middleschoolchemistry/lessonplans/chapter5/lesson8.html', agency: '美國化學學會'
+    },
+    NaOH: {
+      name: '氫氧化鈉', example: '密封瓶裡的白色顆粒', type: '離子化合物',
+      fact: '氫氧化鈉又叫苛性鈉，是一種強鹼。有些肥皂在製作時會用到它，但肥皂不是氫氧化鈉。',
+      note: '有腐蝕性，不要自行碰觸、打開容器或混合。',
+      source: 'https://www.cdc.gov/niosh/npg/npgd0565.html', agency: '美國 NIOSH'
+    },
+    CaCO3: {
+      name: '碳酸鈣', example: '石灰岩', type: '離子化合物',
+      fact: '石灰岩的主要成分通常是碳酸鈣，也常以方解石這種礦物的形式存在。不是每一塊石頭都含有碳酸鈣。',
+      source: 'https://pubs.usgs.gov/fs/2008/3089/', agency: '美國地質調查局'
+    },
+    CH4: {
+      name: '甲烷', example: '天然氣爐的燃料', type: '分子',
+      fact: '天然氣是一種混合物，主要成分是甲烷。圖中的藍色是火焰，不是甲烷本身的顏色。',
+      note: '甲烷無色、易燃；不要自己用火測試。',
+      source: 'https://www.eia.gov/kids/energy-sources/natural-gas/index.php', agency: '美國能源資訊署'
+    },
+    CaCl2: {
+      name: '氯化鈣', example: '有些除濕盒的顆粒', type: '離子化合物',
+      fact: '有些除濕盒用氯化鈣吸收空氣中的水分。現實中，它也能用來幫路上的冰融化，和遊戲裡的「急凍」正好相反。',
+      note: '除濕盒裡的顆粒和液體都不能吃。',
+      source: 'https://damprid.com/wp-content/uploads/2018/02/DampRid-Moisture-Absorbers-12-03-2019-SDS.pdf', agency: '除濕盒成分表',
+      extraSource: 'https://portal.ct.gov/deep/salt/faqs', extraAgency: '道路除冰說明'
+    },
+    HClO: {
+      name: '次氯酸', example: '游泳池的水質消毒', type: '分子',
+      fact: '次氯酸也常寫成 HOCl。在使用含氯消毒的泳池裡，水中可有少量次氯酸幫助殺菌。游泳池的水不是純次氯酸。',
+      note: '不要自行調配或混合任何清潔、消毒用品。',
+      source: 'https://www.cdc.gov/model-aquatic-health-code/media/pdfs/2024/11/5th-Ed-MAHC-Code-508.pdf', agency: '美國 CDC'
+    }
+  };
 
   // === MAP ===
   let rooms = [];
@@ -309,9 +582,16 @@
   }
 
   // === PLAYER ===
+  const PLAYER_HALF_WIDTH = 0.35;
+  const WALK_FRAME_DISTANCE = 0.32; // map tiles per animation frame
+  const CONTACT_PUSH_TIME = 0.16;
+  const CONTACT_PUSH_DISTANCE = 0.65;
+  const HURT_POSE_TIME = 0.22;
+
   let player = { x: 0, y: 0, dir: 'down', hp: 50, maxHp: 50, mp: 20, maxMp: 20,
     atk: 5, level: 1, exp: 0, speed: 4.5,
-    atkTimer: 0, attackDir: 'down', shotTimer: 0, invincible: 0, shieldTimer: 0 };
+    atkTimer: 0, attackDir: 'down', shotTimer: 0, invincible: 0, shieldTimer: 0,
+    walkPhase: 0, walking: false, hurtTimer: 0, hurtDir: 'down', knockback: null, impactOrigin: null };
 
   const keys = { up: false, down: false, left: false, right: false, attack: false, shoot: false };
 
@@ -326,6 +606,16 @@
     castVisuals = [];
     player.invincible = 0;
     player.shieldTimer = 0;
+    resetPlayerMotion();
+  }
+
+  function resetPlayerMotion() {
+    player.walkPhase = 0;
+    player.walking = false;
+    player.hurtTimer = 0;
+    player.hurtDir = player.dir;
+    player.knockback = null;
+    player.impactOrigin = null;
   }
 
   function isSolid(col, row) {
@@ -334,19 +624,11 @@
     return t === TILE.WALL || t === TILE.ROCK || t === TILE.WATER;
   }
 
-  function updatePlayer(dt) {
-    let dx = 0, dy = 0;
-    if (keys.up) { dy = -1; player.dir = 'up'; }
-    if (keys.down) { dy = 1; player.dir = 'down'; }
-    if (keys.left) { dx = -1; player.dir = 'left'; }
-    if (keys.right) { dx = 1; player.dir = 'right'; }
-    // Normalize diagonal
-    if (dx && dy) { dx *= 0.707; dy *= 0.707; }
-    const spd = player.speed * dt;
-    const nx = player.x + dx * spd;
-    const ny = player.y + dy * spd;
-    const halfW = 0.35;
-    // X collision
+  // Voluntary movement and knockback share the same terrain collision.
+  function movePlayerBy(dx, dy) {
+    const startX = player.x, startY = player.y;
+    const nx = startX + dx, ny = startY + dy;
+    const halfW = PLAYER_HALF_WIDTH;
     if (dx !== 0) {
       const testX = dx > 0 ? nx + halfW : nx - halfW;
       if (!isSolid(Math.floor(testX), Math.floor(player.y - halfW)) &&
@@ -354,7 +636,6 @@
         player.x = nx;
       }
     }
-    // Y collision
     if (dy !== 0) {
       const testY = dy > 0 ? ny + halfW : ny - halfW;
       if (!isSolid(Math.floor(player.x - halfW), Math.floor(testY)) &&
@@ -362,41 +643,90 @@
         player.y = ny;
       }
     }
-    // Room transition — check player is at an exit tile and near the edge
-    const pc = Math.floor(player.x), pr = Math.floor(player.y);
-    if (player.x < 0.5 && (pr === 5 || pr === 6)) {
-      if (transitionRoom(-1, 0)) player.x = COLS - 1.5;
-    } else if (player.x > COLS - 0.5 && (pr === 5 || pr === 6)) {
-      if (transitionRoom(1, 0)) player.x = 1.5;
-    } else if (player.y < 0.5 && (pc === 7 || pc === 8)) {
-      if (transitionRoom(0, -1)) player.y = ROWS - 1.5;
-    } else if (player.y > ROWS - 0.5 && (pc === 7 || pc === 8)) {
-      if (transitionRoom(0, 1)) player.y = 1.5;
+    return Math.hypot(player.x - startX, player.y - startY);
+  }
+
+  function updatePlayer(dt) {
+    player.atkTimer = Math.max(0, player.atkTimer - dt);
+    player.shotTimer = Math.max(0, player.shotTimer - dt);
+    player.invincible = Math.max(0, player.invincible - dt);
+    player.shieldTimer = Math.max(0, player.shieldTimer - dt);
+    player.hurtTimer = Math.max(0, player.hurtTimer - dt);
+    if (!player.hurtTimer) player.impactOrigin = null;
+
+    const push = player.knockback;
+    if (push) {
+      // Integrate a decelerating shove; short steps keep it from tunnelling
+      // through solid tiles. It never activates a room exit.
+      const before = 1 - push.elapsed / CONTACT_PUSH_TIME;
+      push.elapsed = Math.min(CONTACT_PUSH_TIME, push.elapsed + dt);
+      const after = 1 - push.elapsed / CONTACT_PUSH_TIME;
+      const distance = CONTACT_PUSH_DISTANCE * (before * before - after * after);
+      const count = Math.max(1, Math.ceil(distance / 0.18));
+      for (let i = 0; i < count; i++) {
+        movePlayerBy(push.x * distance / count, push.y * distance / count);
+      }
+      if (push.elapsed >= CONTACT_PUSH_TIME) player.knockback = null;
+      return;
     }
-    // Timers
-    if (player.atkTimer > 0) player.atkTimer -= dt;
-    if (player.shotTimer > 0) player.shotTimer -= dt;
-    if (player.invincible > 0) player.invincible -= dt;
-    if (player.shieldTimer > 0) player.shieldTimer -= dt;
+
+    let dx = 0, dy = 0;
+    if (keys.up) { dy = -1; player.dir = 'up'; }
+    if (keys.down) { dy = 1; player.dir = 'down'; }
+    if (keys.left) { dx = -1; player.dir = 'left'; }
+    if (keys.right) { dx = 1; player.dir = 'right'; }
+    if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+    const spd = player.speed * dt;
+    const distance = movePlayerBy(dx * spd, dy * spd);
+    player.walking = distance >= 0.0001;
+    player.walkPhase = player.walking ? (player.walkPhase + distance / WALK_FRAME_DISTANCE) % 4 : 0;
+
+    // Only voluntary input toward the exit can change rooms. Check even if
+    // the outer boundary blocked movement after a shove reached the doorway.
+    const pc = Math.floor(player.x), pr = Math.floor(player.y);
+    let movedRoom = false;
+    if (player.x < 0.5 && (pr === 5 || pr === 6) && dx < 0) {
+      if ((movedRoom = transitionRoom(-1, 0))) player.x = COLS - 1.5;
+    } else if (player.x > COLS - 0.5 && (pr === 5 || pr === 6) && dx > 0) {
+      if ((movedRoom = transitionRoom(1, 0))) player.x = 1.5;
+    } else if (player.y < 0.5 && (pc === 7 || pc === 8) && dy < 0) {
+      if ((movedRoom = transitionRoom(0, -1))) player.y = ROWS - 1.5;
+    } else if (player.y > ROWS - 0.5 && (pc === 7 || pc === 8) && dy > 0) {
+      if ((movedRoom = transitionRoom(0, 1))) player.y = 1.5;
+    }
+    if (movedRoom) resetPlayerMotion();
   }
 
   const DIR_ARROWS = { up: '▲', down: '▼', left: '◀', right: '▶' };
   const DIR_FRAME = { down: 0, left: 1, right: 2, up: 3 };
   const DIR_ANGLE = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
   const AMMO_FRAME = { H: 1, O: 2, C: 3, Na: 4, Cl: 5, Ca: 6 };
+  const HERO_VISUAL_SCALE = 1.18;
 
   function drawPlayer() {
     const px = Math.round(player.x * tileSize);
     const py = Math.round(player.y * tileSize);
-    const swinging = player.atkTimer > 0.15;
-    const dir = swinging ? player.attackDir : player.dir;
+    const hurt = player.hurtTimer > 0;
+    const swinging = !hurt && player.atkTimer > 0.15;
+    const dir = hurt ? player.hurtDir : swinging ? player.attackDir : player.dir;
     const frame = swinging ? (player.atkTimer > 0.25 ? 1 : 2) : player.shotTimer > 0 ? 1 : 0;
     const scale = tileSize / 32;
     const flashing = player.invincible > 0 && Math.floor(player.invincible * 16) % 2 !== 0;
     ctx.save();
-    if (flashing) ctx.globalAlpha = 0.55;
-    const drawn = drawArt(heroArt, frame * 4 + DIR_FRAME[dir],
-      px - 20 * scale, py - 26 * scale, 40 * scale, 40 * scale);
+    if (flashing) ctx.globalAlpha = hurt ? 0.82 : 0.55;
+    // Both atlases share the same relative foot anchor. Enlarge around the
+    // feet (not the center) so the player stays planted on the same tile.
+    const size = Math.max(1, Math.round(40 * scale * HERO_VISUAL_SCALE));
+    const footY = py + Math.round(8 * scale);
+    const left = px - Math.round(size / 2);
+    const top = footY - Math.round(size * 0.85);
+    const column = DIR_FRAME[dir];
+    const spriteFrame = frame * 4 + column;
+    const drawn = (hurt && drawArt(heroHurtArt, column, left, top, size, size))
+      || (!hurt && frame === 0 && player.walking &&
+        drawArt(heroWalkArt, Math.floor(player.walkPhase) * 4 + column, left, top, size, size))
+      || drawArt(heroHiResArt, spriteFrame, left, top, size, size)
+      || drawArt(heroArt, spriteFrame, left, top, size, size);
     ctx.restore();
     if (!drawn) {
       const s = tileSize * 0.8;
@@ -425,7 +755,7 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const WORLD_ZOOM = 2;
-  let tileSize = 32;
+  let tileSize = 32, viewWidth = COLS * 32, viewHeight = ROWS * 32;
 
   function loadArt(file, cell, cols, rows) {
     const img = new Image();
@@ -435,7 +765,12 @@
 
   const terrainArt = loadArt('terrain.png', 32, 8, 1);
   const heroArt = loadArt('hero.png', 40, 4, 3);
+  const heroHiResArt = loadArt('hero-hd.png', 120, 4, 3);
+  const heroWalkArt = loadArt('hero-walk.png', 120, 4, 4);
+  const heroHurtArt = loadArt('hero-hurt.png', 120, 4, 1);
   const combatArt = loadArt('combat.png', 48, 4, 3);
+  const monsterAtlas = new Image();
+  monsterAtlas.src = 'assets/chem-arpg/monsters.png';
 
   function drawArt(art, frame, x, y, w, h) {
     const { img, cell, cols, rows } = art;
@@ -473,8 +808,15 @@
     const maxH = stage.clientHeight - 8;
     const fittedTileSize = Math.max(1, Math.floor(Math.min(maxW / COLS, maxH / ROWS)));
     tileSize = fittedTileSize * WORLD_ZOOM;
-    canvas.width = fittedTileSize * COLS;
-    canvas.height = fittedTileSize * ROWS;
+    viewWidth = fittedTileSize * COLS;
+    viewHeight = fittedTileSize * ROWS;
+    // Backing pixels can be denser than CSS pixels; keep camera math in CSS pixels.
+    const density = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+    canvas.style.width = viewWidth + 'px';
+    canvas.style.height = viewHeight + 'px';
+    canvas.width = Math.round(viewWidth * density);
+    canvas.height = Math.round(viewHeight * density);
+    ctx.setTransform(canvas.width / viewWidth, 0, 0, canvas.height / viewHeight, 0, 0);
     ctx.imageSmoothingEnabled = false;
   }
 
@@ -493,7 +835,7 @@
       if (!recipe) continue;
       selectedSkillSlot = next;
       updateHUD();
-      showToast(`選中技能：${recipe.name}（X 施放）`);
+      showToast(`選中技能：${recipe.name}（按技能圓鈕或 X 施放）`);
       return;
     }
     showToast('技能尚未解鎖：請到選單 → 背包合成化合物');
@@ -577,12 +919,8 @@
           const m = room.monsters[j];
           const dx = m.x - p.x, dy = m.y - p.y;
           if (Math.sqrt(dx * dx + dy * dy) < 0.6) {
-            m.hp -= p.dmg;
+            hitMonster(m, p.dmg, p.vx, p.vy, p.element.fx === 'knockback' ? 2 : 0.28);
             // Special effects
-            if (p.element.fx === 'knockback') {
-              const kd = Math.sqrt(dx * dx + dy * dy) || 1;
-              m.x += (dx / kd) * 2; m.y += (dy / kd) * 2;
-            }
             if (p.element.fx === 'dot') m.dotTimer = 3;
             if (m.hp <= 0) killMonster(room, j);
             else playTone(400, 'triangle', 0.04);
@@ -626,9 +964,16 @@
       btn.textContent = recipe ? `${i + 1} ${recipe.formula}` : `${i + 1} 未解鎖`;
       btn.classList.toggle('selected', i === selectedSkillSlot && !!recipe);
       btn.setAttribute('aria-pressed', String(i === selectedSkillSlot && !!recipe));
-      btn.title = recipe ? `${recipe.name}｜消耗 ${recipe.mp} MP｜${recipe.desc}` : '在選單的背包中合成化合物以解鎖技能';
+      btn.title = recipe ? `選擇${recipe.name}，再按技能圓鈕施放｜消耗 ${recipe.mp} MP｜${recipe.desc}` : '在選單的背包中合成化合物以解鎖技能';
       btn.style.color = recipe && player.mp >= recipe.mp ? '#38bdf8' : '#94a3b8';
     });
+    const selected = RECIPES.find(r => r.id === equippedSkills[selectedSkillSlot]);
+    const castButton = document.getElementById('btn-skill');
+    castButton.querySelector('.action-detail').textContent = selected ? `${selected.formula} · ${selected.mp} MP` : '先合成解鎖';
+    castButton.classList.toggle('unavailable', !selected || player.mp < selected.mp);
+    castButton.setAttribute('aria-label', selected ? `施放${selected.name}，消耗 ${selected.mp} MP` : '技能尚未解鎖');
+    document.querySelector('#btn-shoot .action-detail').textContent = `${selectedAmmo} · ${inventory[selectedAmmo] || 0}`;
+    document.getElementById('btn-shoot').classList.toggle('unavailable', !(inventory[selectedAmmo] > 0));
   }
 
   function updateElemBar() {
@@ -645,6 +990,70 @@
         showToast(`彈藥：${selectedAmmo}（剩餘 ${inventory[selectedAmmo] || 0}）`);
       });
     });
+  }
+
+  // === MONSTER HIT ===
+  function hitMonster(monster, damage, dx, dy, distance = 0.28) {
+    monster.hp -= damage;
+    monster.hitFlash = 0.12;
+    monster.hitStun = monster.type === 'boss' ? 0.06 : 0.12;
+    let length = Math.hypot(dx, dy);
+    if (length < 0.0001) {
+      const facing = {up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[player.dir];
+      [dx,dy] = facing; length = 1;
+    }
+    monster.hitPush = { x:dx / length, y:dy / length,
+      distance:distance * (monster.type === 'boss' ? 0.35 : 1), time:0.12 };
+  }
+  function updateMonsterImpact(monster, dt) {
+    monster.hitFlash = Math.max(0, (monster.hitFlash || 0) - dt);
+    const stunned = (monster.hitStun || 0) > 0;
+    monster.hitStun = Math.max(0, (monster.hitStun || 0) - dt);
+    const push = monster.hitPush;
+    if (push) {
+      const distance = push.distance * Math.min(1, dt / push.time);
+      push.distance -= distance;
+      push.time = Math.max(0, push.time - dt);
+      const steps = Math.max(1, Math.ceil(distance / 0.08));
+      for (let i = 0; i < steps; i++) {
+        const dx = push.x * distance / steps, dy = push.y * distance / steps;
+        const nx = monster.x + dx, ny = monster.y + dy;
+        if (dx && !isSolid(Math.floor(nx + Math.sign(dx) * 0.3), Math.floor(monster.y - 0.3)) &&
+          !isSolid(Math.floor(nx + Math.sign(dx) * 0.3), Math.floor(monster.y + 0.3))) monster.x = nx;
+        if (dy && !isSolid(Math.floor(monster.x - 0.3), Math.floor(ny + Math.sign(dy) * 0.3)) &&
+          !isSolid(Math.floor(monster.x + 0.3), Math.floor(ny + Math.sign(dy) * 0.3))) monster.y = ny;
+      }
+      if (!push.time) monster.hitPush = null;
+    }
+    return stunned;
+  }
+
+  // === MONSTER ART ===
+  const MONSTER_FRAMES = Object.freeze({H:0, O:1, C:2, Na:3, Cl:4, Ca:5});
+  function monsterSpriteFrame(monster) {
+    if (monster.type === 'boss') return 7;
+    if (monster.type === 'molecular') return 6;
+    return MONSTER_FRAMES[monster.element.sym] ?? -1;
+  }
+  function drawMonsterSprite(monster, px, py, radius) {
+    const frame = monsterSpriteFrame(monster);
+    if (frame < 0 || !monsterAtlas.naturalWidth || !monsterAtlas.naturalHeight) return false;
+    const cellW = monsterAtlas.naturalWidth / 4, cellH = monsterAtlas.naturalHeight / 2;
+    const size = radius * 2.65;
+    const bob = monster.frozen > 0 ? 0 : Math.sin(Date.now() / 170 + monster.x * 2 + monster.y) * radius * 0.06;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    if (monster.frozen > 0) ctx.globalAlpha *= 0.75;
+    ctx.drawImage(monsterAtlas, (frame % 4) * cellW, Math.floor(frame / 4) * cellH, cellW, cellH,
+      Math.round(px - size / 2), Math.round(py - size * 0.62 + bob), Math.round(size), Math.round(size));
+    if (monster.hitFlash > 0) {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha *= 0.8;
+      ctx.drawImage(monsterAtlas, (frame % 4) * cellW, Math.floor(frame / 4) * cellH, cellW, cellH,
+        Math.round(px - size / 2), Math.round(py - size * 0.62 + bob), Math.round(size), Math.round(size));
+    }
+    ctx.restore();
+    return true;
   }
 
   // === MONSTERS ===
@@ -685,6 +1094,7 @@
     const room = rooms[state.mapY][state.mapX];
     for (let i = room.monsters.length - 1; i >= 0; i--) {
       const m = room.monsters[i];
+      const stunned = updateMonsterImpact(m, dt);
       // DoT
       if (m.dotTimer > 0) {
         m.dotTimer -= dt;
@@ -693,6 +1103,7 @@
       }
       // Frozen
       if (m.frozen > 0) { m.frozen -= dt; continue; }
+      if (stunned) continue;
       // Chase player
       const dx = player.x - m.x;
       const dy = player.y - m.y;
@@ -707,7 +1118,7 @@
       }
       // Contact damage
       if (dist < 0.7 && player.invincible <= 0) {
-        damagePlayer(m.atk);
+        damagePlayer(m.atk, m);
       }
       // Boss shoots
       if (m.type === 'boss') {
@@ -731,7 +1142,9 @@
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath(); ctx.ellipse(px, py + radius * 0.6, radius * 0.7, radius * 0.2, 0, 0, Math.PI * 2); ctx.fill();
-      // Body
+      // Element-specific creatures; retain basic bodies if art is unavailable.
+      const hasSprite = drawMonsterSprite(m, px, py, radius);
+      if (!hasSprite) {
       ctx.fillStyle = m.frozen > 0 ? '#93c5fd' : m.element.color;
       if (m.type === 'boss') {
         ctx.fillRect(px - radius, py - radius, radius * 2, radius * 2);
@@ -745,24 +1158,36 @@
         ctx.lineWidth = 1.5;
         ctx.stroke();
       }
-      // Symbol
+      }
+      if (hasSprite && (m.type === 'boss' || m.frozen > 0)) {
+        ctx.strokeStyle = m.frozen > 0 ? '#a5f3fc' : '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(px, py + radius * 0.65, radius, radius * 0.3, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      // Keep labels sharp and correct instead of baking letters into generated art.
+      const label = m.type === 'molecular' && m.recipe ? m.recipe.formula : m.element.sym;
+      ctx.font = `bold ${Math.max(10, Math.min(m.type === 'boss' ? 22 : 18, radius * 0.65))}px sans-serif`;
+      const labelY = hasSprite ? py + radius * 0.45 : py;
+      const labelW = ctx.measureText(label).width + 10;
+      const labelH = Math.max(16, radius * 0.85);
+      ctx.fillStyle = 'rgba(7,18,30,0.85)';
+      ctx.fillRect(px - labelW / 2, labelY - labelH / 2, labelW, labelH);
       ctx.fillStyle = '#fff';
-      ctx.font = `bold ${radius * 0.9}px sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(m.element.sym, px, py);
+      ctx.fillText(label, px, labelY);
       // HP bar
       if (m.hp < m.maxHp) {
         const barW = radius * 2;
         const barH = 4;
         const barX = px - radius;
-        const barY = py - radius - 8;
+        const barY = py - radius * (hasSprite ? 1.65 : 1) - 8;
         ctx.fillStyle = '#1e293b'; ctx.fillRect(barX, barY, barW, barH);
         ctx.fillStyle = '#ef4444'; ctx.fillRect(barX, barY, barW * (m.hp / m.maxHp), barH);
       }
     });
   }
 
-  function damagePlayer(amount) {
+  function damagePlayer(amount, contactSource = null) {
     if (player.shieldTimer > 0 || player.invincible > 0) return;
     player.hp -= amount;
     player.invincible = 0.5;
@@ -770,6 +1195,28 @@
     if (player.hp <= 0) {
       player.hp = 0;
       playerDeath();
+      return;
+    }
+    player.hurtTimer = HURT_POSE_TIME;
+    player.hurtDir = player.dir;
+    if (contactSource) {
+      let dx = player.x - contactSource.x, dy = player.y - contactSource.y;
+      const length = Math.hypot(dx, dy);
+      if (length > 0.0001) {
+        dx /= length;
+        dy /= length;
+        player.hurtDir = Math.abs(dx) > Math.abs(dy)
+          ? (dx > 0 ? 'left' : 'right') : (dy > 0 ? 'up' : 'down');
+      } else {
+        // If positions overlap exactly, recoil away from the current facing.
+        const angle = DIR_ANGLE[player.dir];
+        dx = -Math.cos(angle);
+        dy = -Math.sin(angle);
+      }
+      player.walking = false;
+      player.walkPhase = 0;
+      player.knockback = { x: dx, y: dy, elapsed: 0 };
+      player.impactOrigin = { x: player.x, y: player.y };
     }
   }
 
@@ -822,7 +1269,7 @@
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
       if (Math.abs(diff) < 0.8) {
-        m.hp -= player.atk;
+        hitMonster(m, player.atk, dx, dy);
         if (m.hp <= 0) killMonster(room, i);
         else playTone(400, 'triangle', 0.04);
       }
@@ -917,11 +1364,16 @@
   }
 
   function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, viewWidth, viewHeight);
     if (state.screen === 'play') {
-      // Follow the player while keeping the viewport inside the room.
-      const cameraX = Math.max(0, Math.min(player.x * tileSize - canvas.width / 2, COLS * tileSize - canvas.width));
-      const cameraY = Math.max(0, Math.min(player.y * tileSize - canvas.height / 2, ROWS * tileSize - canvas.height));
+      // Briefly hold at the contact point so the hero visibly recoils,
+      // then ease the framing back onto the hero.
+      const origin = player.impactOrigin;
+      const hold = origin ? Math.min(1, player.hurtTimer / 0.12) : 0;
+      const focusX = origin ? player.x + (origin.x - player.x) * hold : player.x;
+      const focusY = origin ? player.y + (origin.y - player.y) * hold : player.y;
+      const cameraX = Math.max(0, Math.min(focusX * tileSize - viewWidth / 2, COLS * tileSize - viewWidth));
+      const cameraY = Math.max(0, Math.min(focusY * tileSize - viewHeight / 2, ROWS * tileSize - viewHeight));
       ctx.save();
       ctx.translate(-Math.round(cameraX), -Math.round(cameraY));
       drawRoom();
@@ -937,11 +1389,19 @@
   }
 
   // === KEYBOARD INPUT ===
+  function gameKey(e) {
+    // Physical keys remain stable when an IME reports "Process" or changes
+    // the produced character; use the same mapping for press and release.
+    return ({ KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', KeyZ: 'z', KeyF: 'f', Space: ' ',
+      KeyC: 'c', KeyX: 'x', Digit1: '1', Digit2: '2', Digit3: '3', Digit4: '4',
+      Numpad1: '1', Numpad2: '2', Numpad3: '3', Numpad4: '4' })[e.code] || e.key;
+  }
   window.addEventListener('keydown', (e) => {
     if (state.screen !== 'play' || state.paused) return;
-    const actionKey = ({ KeyC: 'c', KeyX: 'x', Digit1: '1', Digit2: '2', Digit3: '3', Digit4: '4',
-      Numpad1: '1', Numpad2: '2', Numpad3: '3', Numpad4: '4' })[e.code] || e.key;
-    if (['c', 'x', '1', '2', '3', '4', ' '].includes(actionKey)) {
+    const actionKey = gameKey(e);
+    if (['w', 'W', 'a', 'A', 's', 'S', 'd', 'D',
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(actionKey)) e.preventDefault();
+    if (['c', 'x', 'f', 'F', '1', '2', '3', '4', ' '].includes(actionKey)) {
       e.preventDefault();
       if (e.repeat) return;
     }
@@ -951,6 +1411,7 @@
       case 'ArrowLeft': case 'a': case 'A': keys.left = true; break;
       case 'ArrowRight': case 'd': case 'D': keys.right = true; break;
       case 'z': case 'Z': case ' ': keys.attack = true; break;
+      case 'f': case 'F': keys.shoot = true; break;
       case 'x': case 'X': useSkill(selectedSkillSlot); break;
       case 'c': case 'C': cycleSkill(); break;
       case '1': useSkill(0); break;
@@ -960,13 +1421,13 @@
     }
   });
   window.addEventListener('keyup', (e) => {
-    switch (e.key) {
+    switch (gameKey(e)) {
       case 'ArrowUp': case 'w': case 'W': keys.up = false; break;
       case 'ArrowDown': case 's': case 'S': keys.down = false; break;
       case 'ArrowLeft': case 'a': case 'A': keys.left = false; break;
       case 'ArrowRight': case 'd': case 'D': keys.right = false; break;
       case 'z': case 'Z': case ' ': keys.attack = false; break;
-      case 'x': case 'X': keys.shoot = false; break;
+      case 'f': case 'F': keys.shoot = false; break;
     }
   });
 
@@ -1093,7 +1554,7 @@
         const dmg = player.atk * 3;
         room.monsters.forEach(m => {
           const dist = Math.sqrt((m.x - player.x) ** 2 + (m.y - player.y) ** 2);
-          if (dist < 3) m.hp -= dmg;
+          if (dist < 3) hitMonster(m, dmg, m.x - player.x, m.y - player.y);
         });
         for (let i = room.monsters.length - 1; i >= 0; i--) {
           if (room.monsters[i].hp <= 0) killMonster(room, i);
@@ -1117,7 +1578,7 @@
         const dmg2 = player.atk * 5;
         room.monsters.forEach(m => {
           const dist = Math.sqrt((m.x - player.x) ** 2 + (m.y - player.y) ** 2);
-          if (dist < 5) m.hp -= dmg2;
+          if (dist < 5) hitMonster(m, dmg2, m.x - player.x, m.y - player.y);
         });
         for (let i = room.monsters.length - 1; i >= 0; i--) {
           if (room.monsters[i].hp <= 0) killMonster(room, i);
@@ -1215,6 +1676,7 @@
 
   function returnToTitle() {
     state.screen = 'title';
+    resetPlayerMotion();
     player.hp = player.maxHp;
     player.mp = player.maxMp;
     projectiles = []; traps = []; acidZones = []; smokeTimer = 0;
@@ -1275,7 +1737,8 @@
 
   function openMenu(tab = 'inv') {
     state.paused = true;
-    document.getElementById('menu-modal').classList.add('open');
+    const modal = document.getElementById('menu-modal');
+    modal.classList.add('open');
     document.querySelectorAll('.tab-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
@@ -1286,24 +1749,71 @@
     else if (tab === 'codex') renderCodexTab();
     else if (tab === 'status') renderStatusTab();
     else if (tab === 'help') renderHelpTab();
+    modal.querySelector('.menu-content').scrollTop = 0;
   }
 
   function closeMenu() {
+    const detail = document.getElementById('detail-dialog');
+    if (detail.open) detail.close();
     state.paused = false;
     document.getElementById('menu-modal').classList.remove('open');
   }
 
+  // === PERIODIC INVENTORY ===
+  // Atomic numbers/symbols: https://pubchem.ncbi.nlm.nih.gov/rest/pug/periodictable/JSON
+  // 18-column layout and separated series: IUPAC periodic table, 4 May 2022.
+  const PERIODIC_SYMBOLS = ('H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn ' +
+    'Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu ' +
+    'Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og').split(' ');
+  const PERIODIC_ELEMENTS = [];
+  for (const [start, end, row, col] of [
+    [1,1,1,1], [2,2,1,18], [3,4,2,1], [5,10,2,13], [11,12,3,1], [13,18,3,13],
+    [19,36,4,1], [37,54,5,1], [55,56,6,1], [72,86,6,4], [87,88,7,1], [104,118,7,4],
+    [57,71,9,3], [89,103,10,3],
+  ]) {
+    for (let number = start; number <= end; number++) {
+      PERIODIC_ELEMENTS.push({ number, symbol: PERIODIC_SYMBOLS[number - 1], row, col: col + number - start });
+    }
+  }
+
+  function renderPeriodicInventory() {
+    let markup = '<p class="periodic-legend"><strong>亮框：已納入遊戲的 ' + ELEMENTS.length + ' 種元素</strong>｜灰色：尚未納入<br>' +
+      '左上角為原子序，×數字為庫存。手機可左右滑動查看整張表。</p>' +
+      '<div class="periodic-scroll" tabindex="0" role="region" aria-label="元素週期表，可左右捲動">' +
+      '<div class="periodic-grid" role="list" aria-label="118 種元素">';
+    for (let col = 1; col <= 18; col++) {
+      markup += `<span class="periodic-group" style="grid-column:${col};grid-row:1" aria-hidden="true">${col}</span>`;
+    }
+    for (const element of PERIODIC_ELEMENTS) {
+      const gameElement = ELEMENTS.find(e => e.sym === element.symbol);
+      const stock = inventory[element.symbol] || 0;
+      const label = `${element.symbol}${gameElement ? ' ' + gameElement.name : ''}，原子序 ${element.number}，` +
+        (gameElement ? `已納入遊戲，庫存 ${stock}` : '尚未納入遊戲');
+      markup += `<div class="periodic-element${gameElement ? ' in-game' : ''}" data-element="${element.symbol}" role="listitem" ` +
+        `aria-label="${label}" title="${label}" style="grid-column:${element.col};grid-row:${element.row + 1}">` +
+        `<span class="periodic-number" aria-hidden="true">${element.number}</span><span class="periodic-symbol" aria-hidden="true">${element.symbol}</span>` +
+        (gameElement ? `<span class="periodic-stock" aria-hidden="true">×${stock}</span>` : '') + '</div>';
+    }
+    markup += '<span class="periodic-series" style="grid-column:3;grid-row:7" aria-hidden="true">57–71</span>' +
+      '<span class="periodic-series" style="grid-column:3;grid-row:8" aria-hidden="true">89–103</span>' +
+      '<span class="periodic-series" style="grid-column:1 / 3;grid-row:10" aria-hidden="true">鑭系</span>' +
+      '<span class="periodic-series" style="grid-column:1 / 3;grid-row:11" aria-hidden="true">錒系</span>' +
+      '</div></div><a class="periodic-source" href="https://iupac.org/what-we-do/periodic-table-of-elements/" ' +
+      'target="_blank" rel="noopener noreferrer">元素排列參考：IUPAC 元素週期表 ↗</a>';
+    return markup;
+  }
+
+  // === INVENTORY TAB ===
   function renderInventoryTab() {
     const el = document.getElementById('tab-inv');
     let html = '<h3 style="margin-bottom:10px;">元素庫存</h3>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">';
-    ELEMENTS.forEach(e => {
-      html += `<div style="padding:8px 14px;background:#1e293b;border-radius:10px;text-align:center;">` +
-        `<div style="color:${e.color};font-size:20px;font-weight:800;">${e.sym}</div>` +
-        `<div style="color:#94a3b8;font-size:12px;">${e.name}</div>` +
-        `<div style="color:#f8fafc;font-weight:700;">${inventory[e.sym] || 0}</div></div>`;
-    });
-    html += '</div><h3 style="margin-bottom:10px;">合成配方</h3>';
+    html += '<div class="inventory-elements">' + ELEMENTS.map(e =>
+      `<div class="inventory-element" style="--element-color:${e.color}">` +
+      `<div class="inventory-symbol">${e.sym}</div><div class="inventory-name">${e.name}</div>` +
+      `<div class="inventory-count">${inventory[e.sym] || 0}</div></div>`).join('') + '</div>';
+    html += `<button type="button" class="periodic-open" data-open-periodic aria-haspopup="dialog" aria-controls="detail-dialog">` +
+      `查看完整週期表 ↗ · 已納入 ${ELEMENTS.length} / 118 種元素</button>`;
+    html += '<h3 style="margin-bottom:10px;">合成配方</h3>';
     RECIPES.forEach(r => {
       const reqStr = Object.entries(r.req).map(([k, v]) => `${k}×${v}`).join(' + ');
       const canSynth = Object.entries(r.req).every(([sym, count]) => (inventory[sym] || 0) >= count);
@@ -1317,16 +1827,49 @@
 
   function renderCodexTab() {
     const el = document.getElementById('tab-codex');
-    let html = '<h3 style="margin-bottom:10px;">化學圖鑑</h3>';
+    let html = '<h3>化學圖鑑</h3><div class="codex-intro">' +
+      '<p>點開卡片，看看化學式藏在哪些生活用品裡。知識可以先讀，遊戲技能要合成才會解鎖。</p>' +
+      '<p>化學式右下的小數字表示原子個數或比例，沒寫數字就是 1。遊戲合成不是現實的製作方法。</p></div>';
     RECIPES.forEach(r => {
+      const info = COMPOUND_INFO[r.id];
       const unlocked = codex.includes(r.id);
-      html += `<div class="recipe-row ${unlocked ? '' : 'locked'}">` +
-        `<div><strong style="color:${unlocked ? '#38bdf8' : '#64748b'};">${r.formula}</strong> ` +
-        `${unlocked ? r.name : '???'}` +
-        `<div style="font-size:11px;color:#94a3b8;">${unlocked ? r.desc : '尚未解鎖'}</div></div>` +
-        `<div style="color:${unlocked ? '#22c55e' : '#64748b'};font-weight:700;">${unlocked ? '✓ 已收集' : '🔒'}</div></div>`;
+      html += `<button type="button" class="codex-card codex-trigger" data-recipe="${r.id}" aria-haspopup="dialog" aria-controls="detail-dialog">` +
+        `<span class="codex-icon"><img src="assets/chem-arpg/codex/${r.id.toLowerCase()}.png" width="56" height="56" alt=""></span>` +
+        `<span class="codex-main"><strong class="codex-formula">${r.formula}</strong><strong>${info.name}</strong>` +
+        `<span class="codex-example">${info.example}</span></span><span class="codex-side">` +
+        `<span class="${unlocked ? 'collected' : ''}">${unlocked ? '已收集' : '待合成'}</span>` +
+        '<span class="codex-chevron" aria-hidden="true">→</span></span></button>';
     });
     el.innerHTML = html;
+  }
+
+  function showDetail(title, markup, periodic, returnLabel) {
+    const dialog = document.getElementById('detail-dialog');
+    document.getElementById('detail-title').textContent = title;
+    document.getElementById('detail-body').innerHTML = markup;
+    document.getElementById('detail-return').textContent = returnLabel;
+    dialog.classList.toggle('periodic-view', periodic);
+    dialog.showModal();
+    document.getElementById('detail-body').scrollTop = 0;
+  }
+
+  function openCodexDetail(id) {
+    const r = RECIPES.find(recipe => recipe.id === id);
+    if (!r) return;
+    const info = COMPOUND_INFO[id];
+    const unlocked = codex.includes(id);
+    const heading = info.type === '分子' ? '每個分子的組成' : '元素的最簡比例';
+    const atoms = Object.entries(r.req).map(([sym, count]) =>
+      `<span>${ELEMENTS.find(e => e.sym === sym).name} ${sym} × ${count}</span>`).join('');
+    const markup = `<div class="detail-hero"><img src="assets/chem-arpg/codex/${id.toLowerCase()}.png" alt="">` +
+      `<div><strong class="codex-formula">${r.formula}</strong><p>${info.example}</p></div></div>` +
+      `<div class="codex-body"><p><strong>${heading}：</strong></p><div class="codex-atoms">${atoms}</div>` +
+      `<p><strong>生活中的化學：</strong>${info.fact}</p>` +
+      (info.note ? `<p class="codex-note">${info.note}</p>` : '') +
+      `<p class="codex-skill"><strong>遊戲技能：</strong>${unlocked ? r.name + '。' + r.desc : '首次合成後解鎖。'}</p>` +
+      `<a class="codex-source" href="${info.source}" target="_blank" rel="noopener noreferrer">來源（英文）：${info.agency}</a>` +
+      (info.extraSource ? ` <a class="codex-source" href="${info.extraSource}" target="_blank" rel="noopener noreferrer">${info.extraAgency}</a>` : '') + '</div>';
+    showDetail(info.name, markup, false, '返回圖鑑');
   }
 
   function renderStatusTab() {
@@ -1348,6 +1891,7 @@
       `<h4 style="color:#fbbf24;margin:8px 0 4px;">⌨️ 鍵盤</h4>` +
       `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">WASD / 方向鍵</span></div>` +
       `<div class="recipe-row"><span>近戰攻擊</span><span style="color:#38bdf8;">Z / Space</span></div>` +
+      `<div class="recipe-row"><span>發射元素彈</span><span style="color:#38bdf8;">F（點擊上方元素欄切換彈種）</span></div>` +
       `<div class="recipe-row"><span>施放選中技能</span><span style="color:#38bdf8;">X</span></div>` +
       `<div class="recipe-row"><span>切換技能</span><span style="color:#38bdf8;">C</span></div>` +
       `<div class="recipe-row"><span>直接施放技能</span><span style="color:#38bdf8;">1 / 2 / 3 / 4</span></div>` +
@@ -1355,10 +1899,11 @@
       `<div class="recipe-row"><span>關閉選單</span><span style="color:#38bdf8;">Esc</span></div>` +
       `<h4 style="color:#fbbf24;margin:12px 0 4px;">📱 觸控</h4>` +
       `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">左側虛擬搖桿</span></div>` +
-      `<div class="recipe-row"><span>近戰攻擊</span><span style="color:#38bdf8;">⚔️ 按鈕</span></div>` +
-      `<div class="recipe-row"><span>射擊元素彈</span><span style="color:#38bdf8;">🔵 按鈕</span></div>` +
+      `<div class="recipe-row"><span>近戰攻擊</span><span style="color:#38bdf8;">右側左下「普攻」大圓鈕</span></div>` +
+      `<div class="recipe-row"><span>射擊元素彈</span><span style="color:#38bdf8;">右下「元素彈」圓鈕</span></div>` +
       `<div class="recipe-row"><span>切換彈種</span><span style="color:#38bdf8;">點擊元素欄</span></div>` +
-      `<div class="recipe-row"><span>使用技能</span><span style="color:#38bdf8;">技1~技4 按鈕</span></div>` +
+      `<div class="recipe-row"><span>選擇技能</span><span style="color:#38bdf8;">點上方 1～4 技能格（只選招）</span></div>` +
+      `<div class="recipe-row"><span>施放技能</span><span style="color:#38bdf8;">右上「技能」大圓鈕</span></div>` +
       `<h4 style="color:#fbbf24;margin:12px 0 4px;">💡 遊戲提示</h4>` +
       `<div style="color:#94a3b8;font-size:12px;line-height:1.7;">` +
       `• 擊敗怪物會掉落元素字母，靠近自動拾取<br>` +
@@ -1371,22 +1916,53 @@
   }
 
   // === SKILL BUTTON HANDLERS (mobile) ===
-  document.getElementById('sk1').addEventListener('click', () => useSkill(0));
-  document.getElementById('sk2').addEventListener('click', () => useSkill(1));
-  document.getElementById('sk3').addEventListener('click', () => useSkill(2));
-  document.getElementById('sk4').addEventListener('click', () => useSkill(3));
+  function selectSkill(slot) {
+    if (state.screen !== 'play' || state.paused) return;
+    if (!RECIPES.some(recipe => recipe.id === equippedSkills[slot])) {
+      showToast('技能尚未解鎖：請到選單 → 背包合成化合物');
+      return;
+    }
+    selectedSkillSlot = slot;
+    updateHUD();
+  }
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('sk' + (i + 1)).addEventListener('click', () => selectSkill(i));
+  }
 
   // === MENU BUTTON HANDLERS ===
+  const detailDialog = document.getElementById('detail-dialog');
+  document.querySelectorAll('[data-close-detail]').forEach(button => {
+    button.addEventListener('click', () => detailDialog.close());
+  });
+  detailDialog.addEventListener('click', (event) => {
+    if (event.target !== detailDialog) return;
+    const rect = detailDialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) detailDialog.close();
+  });
+  document.getElementById('tab-codex').addEventListener('click', (event) => {
+    const card = event.target.closest('[data-recipe]');
+    if (card) openCodexDetail(card.dataset.recipe);
+  });
+  document.getElementById('tab-inv').addEventListener('click', (event) => {
+    if (event.target.closest('[data-open-periodic]')) showDetail('元素週期表', renderPeriodicInventory(), true, '返回背包');
+  });
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => openMenu(btn.dataset.tab));
   });
   document.getElementById('btn-menu').addEventListener('click', () => openMenu());
   document.getElementById('btn-close-menu').addEventListener('click', closeMenu);
+  document.getElementById('menu-modal').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) closeMenu();
+  });
   document.getElementById('btn-title-codex').addEventListener('click', () => openMenu('codex'));
   document.getElementById('btn-title-status').addEventListener('click', () => openMenu('status'));
 
   // === MENU KEYBOARD SHORTCUTS ===
   window.addEventListener('keydown', (e) => {
+    if (detailDialog.open) {
+      if (e.key === 'Escape') { e.preventDefault(); detailDialog.close(); }
+      return;
+    }
     if (e.key === 'i' || e.key === 'I' || e.key === 'Tab') {
       e.preventDefault();
       if (document.getElementById('menu-modal').classList.contains('open')) closeMenu();
@@ -1398,7 +1974,7 @@
   // === VIRTUAL JOYSTICK ===
   const joyCanvas = document.getElementById('joystick');
   const joyCtx = joyCanvas.getContext('2d');
-  let joyActive = false, joyX = 0, joyY = 0;
+  let joyPointerId = null, joyX = 0, joyY = 0;
 
   function drawJoystick() {
     joyCtx.clearRect(0, 0, 120, 120);
@@ -1412,12 +1988,12 @@
   }
   drawJoystick();
 
-  function handleJoyTouch(e) {
+  function handleJoyPointer(e) {
+    if (e.pointerId !== joyPointerId) return;
     e.preventDefault();
     const rect = joyCanvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const dx = (touch.clientX - rect.left - 60) / 50;
-    const dy = (touch.clientY - rect.top  - 60) / 50;
+    const dx = ((e.clientX - rect.left) * 120 / rect.width - 60) / 50;
+    const dy = ((e.clientY - rect.top) * 120 / rect.height - 60) / 50;
     const len = Math.sqrt(dx * dx + dy * dy);
     if (len > 1) { joyX = dx / len; joyY = dy / len; }
     else          { joyX = dx;      joyY = dy; }
@@ -1428,29 +2004,55 @@
     drawJoystick();
   }
 
-  joyCanvas.addEventListener('touchstart', (e) => { joyActive = true; handleJoyTouch(e); }, { passive: false });
-  joyCanvas.addEventListener('touchmove', handleJoyTouch, { passive: false });
-  joyCanvas.addEventListener('touchend', () => {
-    joyActive = false; joyX = 0; joyY = 0;
+  function resetJoystick(e) {
+    if (e && e.pointerId !== joyPointerId) return;
+    joyPointerId = null; joyX = 0; joyY = 0;
     keys.left = keys.right = keys.up = keys.down = false;
     drawJoystick();
+  }
+  joyCanvas.addEventListener('pointerdown', (e) => {
+    if (joyPointerId !== null) return;
+    joyPointerId = e.pointerId;
+    joyCanvas.setPointerCapture(e.pointerId);
+    handleJoyPointer(e);
   });
+  joyCanvas.addEventListener('pointermove', handleJoyPointer);
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    joyCanvas.addEventListener(event, resetJoystick);
+  }
+  window.addEventListener('blur', () => resetJoystick());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetJoystick(); });
+  window.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') document.body.classList.add('touch-controls');
+  }, { passive: true });
 
   // === MOBILE ACTION BUTTONS ===
-  document.getElementById('btn-atk').addEventListener('pointerdown', (e) => { e.preventDefault(); meleeAttack(); });
-  document.getElementById('btn-shoot').addEventListener('pointerdown', (e) => { e.preventDefault(); shootProjectile(); });
-  // Skill buttons use click only: one activation for mouse, touch and keyboard.
+  // Click fires once for touch, mouse and keyboard without double activation.
+  document.getElementById('btn-atk').addEventListener('click', () => meleeAttack());
+  document.getElementById('btn-skill').addEventListener('click', () => useSkill(selectedSkillSlot));
+  document.getElementById('btn-shoot').addEventListener('click', () => shootProjectile());
 
   // === MINIMAP ===
   function drawMinimap() {
-    const ms = 8;
-    const ox = canvas.width - MAP_W * ms - 8;
-    const oy = 8;
-    ctx.fillStyle = 'rgba(15,23,42,0.8)';
-    ctx.fillRect(ox - 2, oy - 2, MAP_W * ms + 4, MAP_H * ms + 4);
+    const ms = Math.max(4, Math.min(viewWidth >= 600 ? 26 : 18,
+      Math.floor((viewWidth - 32) / MAP_W), Math.floor((viewHeight - 52) / MAP_H)));
+    const ox = viewWidth - MAP_W * ms - 16;
+    const oy = 36;
+    ctx.save();
+    ctx.fillStyle = 'rgba(15,23,42,0.4)';
+    ctx.fillRect(ox - 8, 10, MAP_W * ms + 16, MAP_H * ms + 34);
+    ctx.strokeStyle = 'rgba(125,211,252,0.65)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ox - 8, 10, MAP_W * ms + 16, MAP_H * ms + 34);
+    ctx.fillStyle = '#bae6fd';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('地圖', ox, 23);
     for (let y = 0; y < MAP_H; y++) {
       for (let x = 0; x < MAP_W; x++) {
         const room = rooms[y][x];
+        ctx.globalAlpha = x === state.mapX && y === state.mapY ? 0.95 : 0.6;
         if (x === state.mapX && y === state.mapY) {
           ctx.fillStyle = '#38bdf8';
         } else if (!room.generated) {
@@ -1460,11 +2062,16 @@
         } else if (room.type === 'treasure') {
           ctx.fillStyle = '#fbbf24';
         } else {
-          ctx.fillStyle = '#334155';
+          ctx.fillStyle = '#64748b';
         }
         ctx.fillRect(ox + x * ms, oy + y * ms, ms - 1, ms - 1);
       }
     }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#e0f2fe';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(ox + state.mapX * ms + 2, oy + state.mapY * ms + 2, ms - 5, ms - 5);
+    ctx.restore();
   }
 
   // === TITLE STATS ===
@@ -1477,6 +2084,9 @@
 
   // === INIT ===
   window.addEventListener('resize', resizeCanvas);
+  // Control visibility and HUD wrapping can change the stage without a
+  // window resize; always fit the canvas to the resulting available space.
+  new ResizeObserver(resizeCanvas).observe(document.getElementById('stage'));
   resizeCanvas();
   loadGame();
   updateTitleStats();
