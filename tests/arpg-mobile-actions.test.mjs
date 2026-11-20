@@ -11,7 +11,7 @@ function setup() {
     document: { getElementById: id => ({ addEventListener: (event, fn) => { handlers[id + ':' + event] = fn; } }) },
     state: { screen: 'play', paused: false }, equippedSkills: ['water', 'fire', null, null],
     RECIPES: [{ id: 'water' }, { id: 'fire' }], selectedSkillSlot: 0,
-    updateHUD: () => updates++, showToast: text => notices.push(text),
+    isArcher: () => false, updateHUD: () => updates++, showToast: text => notices.push(text),
     useSkill: slot => casts.push(slot), meleeAttack: () => attacks++, shootProjectile: () => shots++,
   };
   const slots = html.split('// === SKILL BUTTON HANDLERS (mobile) ===')[1].split('// === MENU BUTTON HANDLERS ===')[0];
@@ -35,7 +35,7 @@ test('鎖定技能不改變選招；普通攻擊與元素彈各自觸發', () =>
   assert.equal(s.sandbox.selectedSkillSlot, 0);
   assert.equal(s.notices.length, 1);
   assert.deepEqual(s.casts, []);
-  s.handlers['btn-atk:click']();
+  s.handlers['btn-atk:click']({ pointerType: 'mouse', detail: 1 });
   s.handlers['btn-shoot:click']();
   assert.deepEqual(s.count(), { attacks: 1, shots: 1, updates: 0 });
 });
