@@ -190,7 +190,107 @@
       desc: '前方錐形持續傷害 3 秒' }
   ];
 
-  // ... (Tasks 2-8 will add code here)
+  // === MAP ===
+  let rooms = [];
+
+  function generateMap() {
+    rooms = Array.from({ length: MAP_H }, () => Array.from({ length: MAP_W }, () => ({
+      tiles: [], type: 'normal', generated: false, monsters: [], drops: [], cleared: false
+    })));
+    // Start room at center
+    rooms[2][2].type = 'start';
+    // Boss room on a random edge
+    const edges = [];
+    for (let y = 0; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
+      if (x === 0 || x === MAP_W - 1 || y === 0 || y === MAP_H - 1) {
+        if (!(x === 2 && y === 2)) edges.push([x, y]);
+      }
+    }
+    const [bx, by] = edges[Math.floor(Math.random() * edges.length)];
+    rooms[by][bx].type = 'boss';
+    // 2-3 treasure rooms (not start, not boss)
+    let treasureCount = 0;
+    const target = 2 + Math.floor(Math.random() * 2);
+    while (treasureCount < target) {
+      const tx = Math.floor(Math.random() * MAP_W);
+      const ty = Math.floor(Math.random() * MAP_H);
+      if (rooms[ty][tx].type === 'normal') {
+        rooms[ty][tx].type = 'treasure';
+        treasureCount++;
+      }
+    }
+  }
+
+  function generateRoom(mx, my) {
+    const room = rooms[my][mx];
+    if (room.generated) return;
+    room.generated = true;
+    const tiles = Array.from({ length: ROWS }, () => Array(COLS).fill(TILE.FLOOR));
+    // Border walls (leave exits open at center of each side)
+    for (let c = 0; c < COLS; c++) { tiles[0][c] = TILE.WALL; tiles[ROWS - 1][c] = TILE.WALL; }
+    for (let r = 0; r < ROWS; r++) { tiles[r][0] = TILE.WALL; tiles[r][COLS - 1] = TILE.WALL; }
+    // Exits: 2-tile wide openings at center of each border if adjacent room exists
+    if (my > 0) { tiles[0][7] = TILE.FLOOR; tiles[0][8] = TILE.FLOOR; }
+    if (my < MAP_H - 1) { tiles[ROWS - 1][7] = TILE.FLOOR; tiles[ROWS - 1][8] = TILE.FLOOR; }
+    if (mx > 0) { tiles[5][0] = TILE.FLOOR; tiles[6][0] = TILE.FLOOR; }
+    if (mx < MAP_W - 1) { tiles[5][COLS - 1] = TILE.FLOOR; tiles[6][COLS - 1] = TILE.FLOOR; }
+    // Random terrain for non-start rooms
+    if (room.type !== 'start') {
+      const obstacleCount = 8 + Math.floor(Math.random() * 12);
+      for (let i = 0; i < obstacleCount; i++) {
+        const r = 2 + Math.floor(Math.random() * (ROWS - 4));
+        const c = 2 + Math.floor(Math.random() * (COLS - 4));
+        if (tiles[r][c] === TILE.FLOOR) {
+          const types = [TILE.ROCK, TILE.ROCK, TILE.GRASS, TILE.GRASS, TILE.WATER, TILE.WALL];
+          tiles[r][c] = types[Math.floor(Math.random() * types.length)];
+        }
+      }
+    }
+    room.tiles = tiles;
+  }
+
+  function drawRoom() {
+    const room = rooms[state.mapY][state.mapX];
+    if (!room || !room.generated) return;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const t = room.tiles[r][c];
+        ctx.fillStyle = TILE_COLORS[t];
+        ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+        // Grid line
+        ctx.strokeStyle = 'rgba(30,41,59,0.4)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(c * tileSize, r * tileSize, tileSize, tileSize);
+        // Rock/grass/water decorations
+        if (t === TILE.ROCK) {
+          ctx.fillStyle = '#64748b';
+          ctx.font = `${tileSize * 0.5}px sans-serif`;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('🪨', c * tileSize + tileSize / 2, r * tileSize + tileSize / 2);
+        } else if (t === TILE.GRASS) {
+          ctx.fillStyle = '#22c55e';
+          ctx.font = `${tileSize * 0.45}px sans-serif`;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('~', c * tileSize + tileSize / 2, r * tileSize + tileSize / 2);
+        } else if (t === TILE.WATER) {
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = `${tileSize * 0.45}px sans-serif`;
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText('≋', c * tileSize + tileSize / 2, r * tileSize + tileSize / 2);
+        }
+      }
+    }
+  }
+
+  function transitionRoom(dx, dy) {
+    const nx = state.mapX + dx;
+    const ny = state.mapY + dy;
+    if (nx < 0 || nx >= MAP_W || ny < 0 || ny >= MAP_H) return false;
+    state.mapX = nx;
+    state.mapY = ny;
+    generateRoom(nx, ny);
+    return true;
+  }
 
   // === CANVAS SETUP ===
   const canvas = document.getElementById('game');
@@ -227,8 +327,21 @@
 
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // placeholder — filled by later tasks
+    if (state.screen === 'play') {
+      drawRoom();
+    }
   }
+
+  // === BUTTON HANDLERS ===
+  document.getElementById('btn-start').addEventListener('click', () => {
+    state.screen = 'play';
+    state.mapX = 2; state.mapY = 2;
+    generateMap();
+    generateRoom(2, 2);
+    document.getElementById('title-screen').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'flex';
+    resizeCanvas();
+  });
 
   // === INIT ===
   window.addEventListener('resize', resizeCanvas);
