@@ -29,16 +29,17 @@
     canvas#game { background: #0f172a; border-radius: 4px; touch-action: none; image-rendering: pixelated; }
     /* Mobile controls */
     .controls { padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: #0f172a;
-      border-top: 1px solid #1e293b; display: flex; gap: 8px; z-index: 5; }
-    .ctrl-left { display: none; align-items: center; justify-content: center; width: 120px; height: 120px; position: relative; }
-    .ctrl-right { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin-left: auto; }
+      border-top: 1px solid #1e293b; display: flex; flex-shrink: 0; gap: 8px; z-index: 5; }
+    .ctrl-left { display: none; flex: 0 0 120px; align-items: center; justify-content: center; width: 120px; height: 120px; position: relative; }
+    #joystick { width: 120px; height: 120px; touch-action: none; }
+    .ctrl-right { display: flex; flex: 1; min-width: 0; flex-wrap: wrap; gap: 6px; align-items: flex-end; justify-content: flex-end; margin-left: auto; }
     .abtn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #334155; background: #1e293b;
       color: #f8fafc; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; }
     .abtn:active { background: #334155; }
     .abtn.atk { border-color: #ef4444; background: #450a0a; }
     .abtn.shoot { border-color: #3b82f6; background: #172554; }
-    .skill-row { display: flex; gap: 4px; }
+    .skill-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
     .skill-btn { min-width: 48px; padding: 4px; height: 44px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
       color: #94a3b8; font-size: 11px; font-weight: 700; touch-action: manipulation; }
     .menu-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
@@ -74,8 +75,13 @@
       border-radius: 999px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none;
       transition: opacity 0.2s; z-index: 20; white-space: nowrap; box-shadow: 0 6px 15px rgba(16,185,129,0.4); }
     #toast.show { opacity: 1; }
-    /* Desktop: hide mobile controls */
-    @media (hover: none) and (pointer: coarse) { .ctrl-left { display: flex; } }
+    /* Narrow screens and touch-capable devices need movement controls. */
+    @media (max-width: 759px), (any-pointer: coarse) { .ctrl-left { display: flex; } }
+    .touch-controls .ctrl-left { display: flex; }
+    @media (max-width: 360px) {
+      .ctrl-left { flex-basis: 100px; width: 100px; height: 100px; }
+      #joystick { width: 100px; height: 100px; }
+    }
   </style>
 </head>
 <body>
@@ -108,7 +114,7 @@
       <canvas id="game"></canvas>
     </div>
     <div class="controls" id="mobile-controls">
-      <div class="ctrl-left"><canvas id="joystick" width="120" height="120"></canvas></div>
+      <div class="ctrl-left"><canvas id="joystick" width="120" height="120" aria-label="移動搖桿：拖曳控制方向，放開停止"></canvas></div>
       <div class="ctrl-right">
         <div class="skill-row">
           <button class="skill-btn" id="sk1">技1</button>
@@ -1398,7 +1404,7 @@
   // === VIRTUAL JOYSTICK ===
   const joyCanvas = document.getElementById('joystick');
   const joyCtx = joyCanvas.getContext('2d');
-  let joyActive = false, joyX = 0, joyY = 0;
+  let joyPointerId = null, joyX = 0, joyY = 0;
 
   function drawJoystick() {
     joyCtx.clearRect(0, 0, 120, 120);
@@ -1412,12 +1418,12 @@
   }
   drawJoystick();
 
-  function handleJoyTouch(e) {
+  function handleJoyPointer(e) {
+    if (e.pointerId !== joyPointerId) return;
     e.preventDefault();
     const rect = joyCanvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const dx = (touch.clientX - rect.left - 60) / 50;
-    const dy = (touch.clientY - rect.top  - 60) / 50;
+    const dx = ((e.clientX - rect.left) * 120 / rect.width - 60) / 50;
+    const dy = ((e.clientY - rect.top) * 120 / rect.height - 60) / 50;
     const len = Math.sqrt(dx * dx + dy * dy);
     if (len > 1) { joyX = dx / len; joyY = dy / len; }
     else          { joyX = dx;      joyY = dy; }
@@ -1428,13 +1434,27 @@
     drawJoystick();
   }
 
-  joyCanvas.addEventListener('touchstart', (e) => { joyActive = true; handleJoyTouch(e); }, { passive: false });
-  joyCanvas.addEventListener('touchmove', handleJoyTouch, { passive: false });
-  joyCanvas.addEventListener('touchend', () => {
-    joyActive = false; joyX = 0; joyY = 0;
+  function resetJoystick(e) {
+    if (e && e.pointerId !== joyPointerId) return;
+    joyPointerId = null; joyX = 0; joyY = 0;
     keys.left = keys.right = keys.up = keys.down = false;
     drawJoystick();
+  }
+  joyCanvas.addEventListener('pointerdown', (e) => {
+    if (joyPointerId !== null) return;
+    joyPointerId = e.pointerId;
+    joyCanvas.setPointerCapture(e.pointerId);
+    handleJoyPointer(e);
   });
+  joyCanvas.addEventListener('pointermove', handleJoyPointer);
+  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    joyCanvas.addEventListener(event, resetJoystick);
+  }
+  window.addEventListener('blur', () => resetJoystick());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetJoystick(); });
+  window.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch') document.body.classList.add('touch-controls');
+  }, { passive: true });
 
   // === MOBILE ACTION BUTTONS ===
   document.getElementById('btn-atk').addEventListener('pointerdown', (e) => { e.preventDefault(); meleeAttack(); });
