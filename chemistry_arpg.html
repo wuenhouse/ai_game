@@ -292,6 +292,99 @@
     return true;
   }
 
+  // === PLAYER ===
+  let player = { x: 0, y: 0, dir: 'down', hp: 50, maxHp: 50, mp: 20, maxMp: 20,
+    atk: 5, level: 1, exp: 0, speed: 4.5,
+    atkTimer: 0, invincible: 0, shieldTimer: 0 };
+
+  const keys = { up: false, down: false, left: false, right: false, attack: false, shoot: false };
+
+  function initPlayer() {
+    player.x = 7.5; player.y = 6;
+    player.dir = 'down';
+    player.hp = player.maxHp;
+    player.mp = player.maxMp;
+    player.atkTimer = 0;
+    player.invincible = 0;
+    player.shieldTimer = 0;
+  }
+
+  function isSolid(col, row) {
+    if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return true;
+    const t = rooms[state.mapY][state.mapX].tiles[row][col];
+    return t === TILE.WALL || t === TILE.ROCK || t === TILE.WATER;
+  }
+
+  function updatePlayer(dt) {
+    let dx = 0, dy = 0;
+    if (keys.up) { dy = -1; player.dir = 'up'; }
+    if (keys.down) { dy = 1; player.dir = 'down'; }
+    if (keys.left) { dx = -1; player.dir = 'left'; }
+    if (keys.right) { dx = 1; player.dir = 'right'; }
+    // Normalize diagonal
+    if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+    const spd = player.speed * dt;
+    const nx = player.x + dx * spd;
+    const ny = player.y + dy * spd;
+    const halfW = 0.35;
+    // X collision
+    if (dx !== 0) {
+      const testX = dx > 0 ? nx + halfW : nx - halfW;
+      if (!isSolid(Math.floor(testX), Math.floor(player.y - halfW)) &&
+          !isSolid(Math.floor(testX), Math.floor(player.y + halfW - 0.01))) {
+        player.x = nx;
+      }
+    }
+    // Y collision
+    if (dy !== 0) {
+      const testY = dy > 0 ? ny + halfW : ny - halfW;
+      if (!isSolid(Math.floor(player.x - halfW), Math.floor(testY)) &&
+          !isSolid(Math.floor(player.x + halfW - 0.01), Math.floor(testY))) {
+        player.y = ny;
+      }
+    }
+    // Room transition
+    if (player.x < 0.1) { if (transitionRoom(-1, 0)) player.x = COLS - 1.5; }
+    else if (player.x > COLS - 0.1) { if (transitionRoom(1, 0)) player.x = 1.5; }
+    else if (player.y < 0.1) { if (transitionRoom(0, -1)) player.y = ROWS - 1.5; }
+    else if (player.y > ROWS - 0.1) { if (transitionRoom(0, 1)) player.y = 1.5; }
+    // Timers
+    if (player.atkTimer > 0) player.atkTimer -= dt;
+    if (player.invincible > 0) player.invincible -= dt;
+    if (player.shieldTimer > 0) player.shieldTimer -= dt;
+  }
+
+  const DIR_ARROWS = { up: '▲', down: '▼', left: '◀', right: '▶' };
+
+  function drawPlayer() {
+    const px = player.x * tileSize;
+    const py = player.y * tileSize;
+    const s = tileSize * 0.8;
+    // Body
+    ctx.fillStyle = player.invincible > 0 ? (Math.floor(player.invincible * 10) % 2 ? '#fbbf24' : '#38bdf8') : '#38bdf8';
+    ctx.fillRect(px - s / 2, py - s / 2, s, s);
+    // Border
+    ctx.strokeStyle = '#7dd3fc';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px - s / 2, py - s / 2, s, s);
+    // Direction arrow
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${tileSize * 0.4}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(DIR_ARROWS[player.dir], px, py);
+    // Attack visual
+    if (player.atkTimer > 0.15) {
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 3;
+      const atkRange = tileSize * 1.5;
+      const angles = { up: -Math.PI / 2, down: Math.PI / 2, left: Math.PI, right: 0 };
+      const a = angles[player.dir];
+      ctx.beginPath();
+      ctx.arc(px, py, atkRange, a - 0.6, a + 0.6);
+      ctx.stroke();
+    }
+  }
+
   // === CANVAS SETUP ===
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -322,15 +415,39 @@
   }
 
   function update(dt) {
-    // placeholder — filled by later tasks
+    updatePlayer(dt);
   }
 
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (state.screen === 'play') {
       drawRoom();
+      drawPlayer();
     }
   }
+
+  // === KEYBOARD INPUT ===
+  window.addEventListener('keydown', (e) => {
+    if (state.screen !== 'play') return;
+    switch (e.key) {
+      case 'ArrowUp': case 'w': case 'W': keys.up = true; break;
+      case 'ArrowDown': case 's': case 'S': keys.down = true; break;
+      case 'ArrowLeft': case 'a': case 'A': keys.left = true; break;
+      case 'ArrowRight': case 'd': case 'D': keys.right = true; break;
+      case 'z': case 'Z': case ' ': keys.attack = true; break;
+      case 'x': case 'X': keys.shoot = true; break;
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    switch (e.key) {
+      case 'ArrowUp': case 'w': case 'W': keys.up = false; break;
+      case 'ArrowDown': case 's': case 'S': keys.down = false; break;
+      case 'ArrowLeft': case 'a': case 'A': keys.left = false; break;
+      case 'ArrowRight': case 'd': case 'D': keys.right = false; break;
+      case 'z': case 'Z': case ' ': keys.attack = false; break;
+      case 'x': case 'X': keys.shoot = false; break;
+    }
+  });
 
   // === BUTTON HANDLERS ===
   document.getElementById('btn-start').addEventListener('click', () => {
@@ -338,6 +455,7 @@
     state.mapX = 2; state.mapY = 2;
     generateMap();
     generateRoom(2, 2);
+    initPlayer();
     document.getElementById('title-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'flex';
     resizeCanvas();
