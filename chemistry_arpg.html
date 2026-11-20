@@ -325,7 +325,7 @@
       <p class="help-start">先試試 W A S D，或方向鍵移動！</p>
       <div class="archer-guide">
         <p>WASD／方向鍵移動。按住 Z 或空白鍵集氣，放開射擊。可邊走邊集氣。</p>
-        <p>短按單箭。衣服亮一道金紋是三箭、兩道是大箭。弓手不能施放技能。</p>
+        <p>短按單箭。金色氣焰是三箭；燃起更大的亮金氣焰是大箭，可打碎岩石。弓手不能施放技能。</p>
         <p id="bow-desktop-status"></p>
       </div>
       <div class="mage-guide">
@@ -637,9 +637,9 @@
   let bowFan = null;
   // Range uses world tiles, not viewport pixels; recovery is game time.
   const BOW_SHOTS = [
-    { offsets:[0], range:6, speed:11, damage:0.85, recovery:0.27 },
-    { offsets:[-0.24,0,0.24], range:5.5, speed:11, damage:0.92, recovery:0.42 },
-    { offsets:[0], range:7.5, speed:13, damage:2.05, recovery:0.60 }
+    { offsets:[0], range:6, speed:11, damage:0.85, recovery:0.14 },
+    { offsets:[-0.24,0,0.24], range:5.5, speed:11, damage:0.92, recovery:0.22 },
+    { offsets:[0], range:7.5, speed:13, damage:2.05, recovery:0.32 }
   ];
   const isArcher = () => activeHero === 'archer';
 
@@ -763,7 +763,7 @@
   const AMMO_FRAME = { H: 1, O: 2, C: 3, Na: 4, Cl: 5, Ca: 6 };
   const HERO_VISUAL_SCALE = 1.18;
 
-  function drawArcherSprite(ctx, x, y, size, dir, pose, frame, moving, chargeStage = 0) {
+  function drawArcherSprite(ctx, x, y, size, dir, pose, frame, moving) {
     const s = size / 34, back = dir === 'up', side = dir === 'left' || dir === 'right';
     const lean = pose === 'hurt' ? -2 : 0;
     const stride = moving && pose !== 'hurt' ? [2,0,-2,0][frame & 3] : 0;
@@ -793,20 +793,6 @@
     rect(-6,-12,5,4,'q'); rect(-3,-20,6,11,'n'); rect(-5,-12,10,2,'d');
     if (back) { rect(-4,-20,8,10,'b'); rect(-1,-17,3,4,'t'); }
     else { rect(-2,-14,4,2,'g'); rect(3,-14,2,3,'t'); }
-    // Charge light is painted on the coat, so it moves with the character.
-    if (chargeStage > 0) {
-      ctx.save();
-      ctx.shadowColor = chargeStage === 2 ? '#ffb737' : '#ffc966';
-      ctx.shadowBlur = chargeStage === 2 ? 7 : 3;
-      const stripe = (offset) => {
-        rect(-5 + offset,-20,2,3,'l');
-        rect(-4 + offset,-17,2,3,'l');
-        rect(-3 + offset,-14,2,2,'l');
-      };
-      stripe(0);
-      if (chargeStage === 2) stripe(5);
-      ctx.restore();
-    }
     rect(-6,-34,12,2,'e'); rect(-8,-32,16,3,'e'); rect(-9,-29,18,6,'e'); rect(-7,-23,14,3,'e');
     rect(-6,-32,12,3,'p'); rect(-7,-30,14,7,'h'); rect(-5,-31,6,1,'r');
     if (!back) {
@@ -832,29 +818,45 @@
     ctx.restore();
   }
 
-  function drawArcherGold(left, top, size, dir, stage) {
-    const marks = {
-      down:[[43,64,38,87],[72,64,80,86]], left:[[60,62,65,86],[74,64,81,85]],
-      right:[[46,62,41,86],[32,64,25,85]], up:[[51,62,44,86],[68,62,75,86]]
-    }[dir].slice(0, stage);
-    const k = size / 120;
+  function drawArcherAura(x, feet, size, stage, ms) {
+    // Rising flame tongues sit behind the sprite, not on her face or coat.
+    const strong = stage === 2, u = size / 120, time = ms / 1000;
+    const height = size * (strong ? 0.92 : 0.70), width = size * (strong ? 0.48 : 0.37);
     ctx.save();
-    // Contrast and line count remain readable even without glow effects.
     ctx.globalAlpha = 1;
-    ctx.lineCap = 'round';
-    const pass = (color, width, glow) => {
-      ctx.strokeStyle = color;
-      ctx.lineWidth = Math.max(width * k, width > 10 ? 5 : width > 5 ? 3 : 1.4);
-      ctx.shadowBlur = glow;
-      for (const [x1,y1,x2,y2] of marks) {
-        ctx.beginPath(); ctx.moveTo(left + x1*k, top + y1*k);
-        ctx.lineTo(left + x2*k, top + y2*k); ctx.stroke();
-      }
+    const flame = (offset, base, peak, sway, outer, inner) => {
+      const bx = x + offset, by = feet - 2*u;
+      ctx.fillStyle = outer;
+      ctx.beginPath(); ctx.moveTo(bx-base,by);
+      ctx.quadraticCurveTo(bx-base*1.5,by-peak*0.42,bx+sway,by-peak);
+      ctx.quadraticCurveTo(bx+sway*0.5+base*0.12,by-peak*0.52,bx+base,by-peak*0.32);
+      ctx.quadraticCurveTo(bx+base*1.18,by-peak*0.13,bx+base,by);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = inner;
+      ctx.beginPath(); ctx.moveTo(bx-base*0.48,by);
+      ctx.quadraticCurveTo(bx-base*0.82,by-peak*0.33,bx+sway*0.55,by-peak*0.77);
+      ctx.quadraticCurveTo(bx+base*0.14,by-peak*0.29,bx+base*0.55,by);
+      ctx.closePath(); ctx.fill();
     };
-    pass('#2e1606', 13, 0);
-    ctx.shadowColor = stage === 2 ? '#ff9c1b' : '#ffc64f';
-    pass(stage === 2 ? '#ffae2b' : '#ffcc45', 9, stage === 2 ? 16 : 9);
-    pass(stage === 2 ? '#fff9cd' : '#fff0a0', 4, 0);
+    ctx.fillStyle = strong ? '#fba42456' : '#fbbd3d27';
+    ctx.beginPath(); ctx.ellipse(x, feet - 2*u, width, size*0.09, 0, 0, Math.PI*2); ctx.fill();
+    const points = strong ? [-0.75,-0.42,0.05,0.47,0.78] : [-0.7,-0.23,0.35,0.71];
+    points.forEach((v,n) => {
+      const lift = 0.68 + (1-Math.abs(v))*0.39 + Math.sin(time*11+n*2.1)*0.105;
+      const sway = width * (Math.sin(time*7+n)*0.14 + v*0.36);
+      flame(v*width, width*(strong?0.29:0.25), height*lift, sway,
+        strong?'#ff982ebc':'#ec95258a', strong?'#fff2a7e8':'#ffda68c8');
+    });
+    for (let n=0; n<(strong?9:4); n++) {
+      const phase = (time*(strong?1.65:1.2)+n*0.219)%1;
+      const sign = n%2 ? 1 : -1;
+      const px = x + sign*width*(0.56+(n%3)*0.19+phase*0.14);
+      const py = feet - size*(0.12 + phase*(strong?0.91:0.69));
+      const dot = Math.max(1, u*(strong?4:3)*(1-phase*0.55));
+      ctx.globalAlpha = 0.88-phase*0.48;
+      ctx.fillStyle = n%3===0?'#fff6bf':'#ffba42';
+      ctx.fillRect(Math.round(px),Math.round(py),dot, dot*(strong?1.75:1.35));
+    }
     ctx.restore();
   }
 
@@ -876,7 +878,8 @@
     const left = px - Math.round(size / 2);
     const top = footY - Math.round(size * 0.85);
     if (isArcher()) {
-      const stage = bowInput === null ? 0 : bowStage(performance.now() - bowStartedAt);
+      const elapsed = bowInput === null ? 0 : performance.now() - bowStartedAt;
+      const stage = bowStage(elapsed);
       const pose = hurt ? 'hurt' : player.atkTimer > 0 ? 'release'
         : bowInput !== null ? 'charge' : player.walking ? 'walk' : 'idle';
       const archerDir = hurt ? player.hurtDir : pose === 'release' ? player.attackDir : player.dir;
@@ -884,11 +887,10 @@
       const row = pose === 'hurt' ? 5 : pose === 'charge' ? 1 : pose === 'release' ? 2
         : pose === 'walk' ? [3, 0, 4, 0][gait] : 0;
       const bob = pose === 'charge' && player.walking && (gait & 1) ? Math.max(1, Math.round(size / 90)) : 0;
-      if (drawArt(archerArt, row * 4 + DIR_FRAME[archerDir], left, top - bob, size, size)) {
-        if (stage > 0 && (pose === 'charge' || pose === 'hurt')) drawArcherGold(left, top - bob, size, archerDir, stage);
-      } else {
+      if (stage > 0 && (pose === 'charge' || pose === 'hurt')) drawArcherAura(px, footY - bob, size, stage, elapsed);
+      if (!drawArt(archerArt, row * 4 + DIR_FRAME[archerDir], left, top - bob, size, size)) {
         drawArcherSprite(ctx, px, footY, Math.round(size * 0.70), archerDir,
-          pose, gait, player.walking, stage);
+          pose, gait, player.walking);
       }
       ctx.restore();
       return;
@@ -1100,7 +1102,11 @@
     for (let i = 0; i < samples; i++) {
       p.x += p.dx * distance / samples;
       p.y += p.dy * distance / samples;
-      if (isSolid(Math.floor(p.x), Math.floor(p.y))) return false;
+      const col = Math.floor(p.x), row = Math.floor(p.y);
+      if (isSolid(col, row)) {
+        if (p.stage === 2 && breakRock(room, col, row)) playTone(180, 'triangle', 0.12);
+        return false; // Even a rock-breaking arrow stops at the impact tile.
+      }
       const radius = p.stage === 2 ? 0.72 : 0.48;
       for (let j = room.monsters.length - 1; j >= 0; j--) {
         const m = room.monsters[j];
@@ -1603,13 +1609,17 @@
     const dyDir = { up: -1, down: 1, left: 0, right: 0 };
     const rc = Math.floor(player.x + dxDir[player.dir]);
     const rr = Math.floor(player.y + dyDir[player.dir]);
-    if (rc >= 0 && rc < COLS && rr >= 0 && rr < ROWS && room.tiles[rr][rc] === TILE.ROCK) {
-      room.tiles[rr][rc] = TILE.FLOOR;
-      if (Math.random() < 0.3) {
-        const el = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
-        room.drops.push({ x: rc + 0.5, y: rr + 0.5, sym: el.sym, life: 15 });
-      }
+    breakRock(room, rc, rr);
+  }
+
+  function breakRock(room, col, row) {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS || room.tiles[row][col] !== TILE.ROCK) return false;
+    room.tiles[row][col] = TILE.FLOOR;
+    if (Math.random() < 0.3) {
+      const el = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
+      room.drops.push({ x: col + 0.5, y: row + 0.5, sym: el.sym, life: 15 });
     }
+    return true;
   }
 
   // === EXP & LEVEL UP ===
@@ -2280,7 +2290,7 @@
 
   function renderHelpTab() {
     if (isArcher() && state.screen === 'play') {
-      document.getElementById('tab-help').textContent = '馬尾弓手：按住弓箭按鈕（鍵盤 Z 或空白鍵）集氣，放開射箭。短按單箭；衣服亮一道金紋是三箭散射、亮兩道是大箭。可以邊走邊集氣；射出後短暫硬直，箭碰到地形或怪物就停。你仍可以合成、收集與閱讀圖鑑，但弓手不能施放技能。';
+      document.getElementById('tab-help').textContent = '馬尾弓手：按住弓箭按鈕（鍵盤 Z 或空白鍵）集氣，放開射箭。短按單箭；小金色氣焰是三箭，大金色氣焰是大箭（可打碎岩石）。可以邊走邊集氣；射出後短暫硬直，箭碰到地形或怪物就停。你仍可以合成、收集與閱讀圖鑑，但弓手不能施放技能。';
       return;
     }
     document.getElementById('tab-help').innerHTML =
