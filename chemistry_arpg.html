@@ -29,7 +29,7 @@
     .elem-slot.active { border-color: #fbbf24; background: #332800; }
     /* Canvas area */
     .play-area { display: flex; flex: 1; min-height: 0; }
-    .stage { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .stage { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; touch-action: none; }
     .desktop-help { display: none; }
     @media (min-width: 760px) and (hover: hover) and (pointer: fine) {
       .desktop-help { display: block; flex: 0 0 clamp(200px, 20vw, 260px); margin: 8px 12px 8px 8px;
@@ -60,8 +60,8 @@
     /* Mobile controls */
     .controls { padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: #0f172a;
       border-top: 1px solid #1e293b; display: flex; flex-shrink: 0; align-items: flex-end; gap: 8px; z-index: 5; }
-    .ctrl-left { display: none; flex: 0 0 120px; align-items: center; justify-content: center; width: 120px; height: 120px; margin-bottom: 8px; position: relative; }
-    #joystick { width: 120px; height: 120px; touch-action: none; }
+    .move-hint { display: none; max-width: 120px; padding: 0 4px 12px; color: #94a3b8; font-size: 11px; pointer-events: none; }
+    #joystick { position: fixed; z-index: 12; width: 112px; height: 112px; transform: translate(-50%, -50%); pointer-events: none; }
     .ctrl-right { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 8px; align-items: center; margin-left: auto; }
     .abtn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #334155; background: #1e293b;
       color: #f8fafc; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;
@@ -252,13 +252,13 @@
       border-radius: 999px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none;
       transition: opacity 0.2s; z-index: 20; white-space: nowrap; box-shadow: 0 6px 15px rgba(16,185,129,0.4); }
     #toast.show { opacity: 1; }
-    /* Narrow screens and touch-capable devices need movement controls. */
-    @media (max-width: 759px), (any-pointer: coarse) { .ctrl-left { display: flex; } }
-    .touch-controls .ctrl-left { display: flex; }
-    @media (max-width: 360px) {
-      .ctrl-left { flex-basis: 100px; width: 100px; height: 100px; }
-      #joystick { width: 100px; height: 100px; }
+    /* Both the stage and the empty bottom strip accept movement touches. */
+    @media (max-width: 759px), (any-pointer: coarse) {
+      .controls { touch-action: none; }
+      .move-hint { display: block; }
     }
+    .touch-controls .controls { touch-action: none; }
+    .touch-controls .move-hint { display: block; }
   </style>
 </head>
 <body>
@@ -292,7 +292,8 @@
     <div class="play-area">
     <div class="stage" id="stage">
       <div id="toast"></div>
-      <canvas id="game"></canvas>
+      <canvas id="game" aria-label="遊戲區：手機按住任意位置並拖曳即可移動"></canvas>
+      <canvas id="joystick" width="120" height="120" hidden aria-hidden="true"></canvas>
     </div>
     <aside class="desktop-help" aria-label="鍵盤操作說明">
       <h2>操作指南</h2>
@@ -315,7 +316,7 @@
     </aside>
     </div>
     <div class="controls" id="mobile-controls">
-      <div class="ctrl-left"><canvas id="joystick" width="120" height="120" aria-label="移動搖桿：拖曳控制方向，放開停止"></canvas></div>
+      <span class="move-hint">按住畫面拖曳移動</span>
       <div class="ctrl-right">
         <div class="skill-row">
           <button class="skill-btn" id="sk1">技1</button>
@@ -679,6 +680,10 @@
     if (keys.down) { dy = 1; player.dir = 'down'; }
     if (keys.left) { dx = -1; player.dir = 'left'; }
     if (keys.right) { dx = 1; player.dir = 'right'; }
+    if (joyDirectionX || joyDirectionY) {
+      dx = joyDirectionX; dy = joyDirectionY;
+      player.dir = joyFacing();
+    }
     if (dx && dy) { dx *= 0.707; dy *= 0.707; }
     const spd = player.speed * dt;
     const distance = movePlayerBy(dx * spd, dy * spd);
@@ -1322,7 +1327,7 @@
   // === PLAYER DEATH ===
   function playerDeath() {
     state.screen = 'dead';
-    meleeQueued = false;
+    resetTouchInput();
     window._stats.deaths = (window._stats.deaths || 0) + 1;
     saveGame();
     document.getElementById('death-modal').classList.add('open');
@@ -1686,7 +1691,7 @@
   // === BOSS VICTORY & RETURN TO TITLE ===
   function bossVictory() {
     state.screen = 'victory';
-    meleeQueued = false;
+    resetTouchInput();
     const totalElems = Object.values(inventory).reduce((a, b) => a + b, 0);
     const summary = `獲得經驗值 100，收集了 ${totalElems} 個元素！`;
     document.getElementById('victory-summary').textContent = summary;
@@ -1696,7 +1701,7 @@
 
   function returnToTitle() {
     state.screen = 'title';
-    meleeQueued = false;
+    resetTouchInput();
     resetPlayerMotion();
     player.hp = player.maxHp;
     player.mp = player.maxMp;
@@ -1758,7 +1763,7 @@
 
   function openMenu(tab = 'inv') {
     state.paused = true;
-    meleeQueued = false;
+    resetTouchInput();
     const modal = document.getElementById('menu-modal');
     modal.classList.add('open');
     document.querySelectorAll('.tab-btn').forEach(b => {
@@ -1920,7 +1925,7 @@
       `<div class="recipe-row"><span>開啟選單</span><span style="color:#38bdf8;">I / Tab</span></div>` +
       `<div class="recipe-row"><span>關閉選單</span><span style="color:#38bdf8;">Esc</span></div>` +
       `<h4 style="color:#fbbf24;margin:12px 0 4px;">📱 觸控</h4>` +
-      `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">左側虛擬搖桿</span></div>` +
+      `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">按住遊戲區任意位置拖曳，放開停止</span></div>` +
       `<div class="recipe-row"><span>近戰攻擊</span><span style="color:#38bdf8;">右側左下「普攻」大圓鈕</span></div>` +
       `<div class="recipe-row"><span>射擊元素彈</span><span style="color:#38bdf8;">右下「元素彈」圓鈕</span></div>` +
       `<div class="recipe-row"><span>切換彈種</span><span style="color:#38bdf8;">點擊元素欄</span></div>` +
@@ -1993,60 +1998,81 @@
     if (e.key === 'Escape') closeMenu();
   });
 
-  // === VIRTUAL JOYSTICK ===
+  // === FLOATING TOUCH JOYSTICK ===
   const joyCanvas = document.getElementById('joystick');
   const joyCtx = joyCanvas.getContext('2d');
-  let joyPointerId = null, joyX = 0, joyY = 0;
+  const MOVE_RADIUS = 44; // use CSS pixels regardless of canvas pixel density
+  const MOVE_DEAD_ZONE = 12;
+  let joyPointerId = null, joySurface = null, joyOriginX = 0, joyOriginY = 0;
+  let joyX = 0, joyY = 0, joyDirectionX = 0, joyDirectionY = 0;
+
+  function joyFacing() {
+    return joyDirectionX && (!joyDirectionY || Math.abs(joyX) >= Math.abs(joyY))
+      ? (joyDirectionX > 0 ? 'right' : 'left')
+      : (joyDirectionY > 0 ? 'down' : 'up');
+  }
 
   function drawJoystick() {
     joyCtx.clearRect(0, 0, 120, 120);
-    // Base circle
-    joyCtx.strokeStyle = '#334155'; joyCtx.lineWidth = 2;
-    joyCtx.beginPath(); joyCtx.arc(60, 60, 50, 0, Math.PI * 2); joyCtx.stroke();
-    // Thumb
-    const tx = 60 + joyX * 30, ty = 60 + joyY * 30;
+    joyCtx.fillStyle = 'rgba(15, 23, 42, 0.48)';
+    joyCtx.strokeStyle = 'rgba(125, 211, 252, 0.85)'; joyCtx.lineWidth = 2;
+    joyCtx.beginPath(); joyCtx.arc(60, 60, 49, 0, Math.PI * 2); joyCtx.fill(); joyCtx.stroke();
     joyCtx.fillStyle = '#38bdf8';
-    joyCtx.beginPath(); joyCtx.arc(tx, ty, 18, 0, Math.PI * 2); joyCtx.fill();
+    joyCtx.beginPath(); joyCtx.arc(60 + joyX * 30, 60 + joyY * 30, 17, 0, Math.PI * 2); joyCtx.fill();
   }
-  drawJoystick();
 
   function handleJoyPointer(e) {
     if (e.pointerId !== joyPointerId) return;
-    e.preventDefault();
-    const rect = joyCanvas.getBoundingClientRect();
-    const dx = ((e.clientX - rect.left) * 120 / rect.width - 60) / 50;
-    const dy = ((e.clientY - rect.top) * 120 / rect.height - 60) / 50;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len > 1) { joyX = dx / len; joyY = dy / len; }
-    else          { joyX = dx;      joyY = dy; }
-    keys.left  = joyX < -0.3; keys.right = joyX > 0.3;
-    keys.up    = joyY < -0.3; keys.down  = joyY > 0.3;
-    if (Math.abs(joyX) > Math.abs(joyY)) player.dir = joyX > 0 ? 'right' : 'left';
-    else if (Math.abs(joyY) > 0.3)       player.dir = joyY > 0 ? 'down'  : 'up';
+    const dx = e.clientX - joyOriginX, dy = e.clientY - joyOriginY;
+    const distance = Math.hypot(dx, dy);
+    const scale = Math.max(distance, MOVE_RADIUS);
+    joyX = dx / scale; joyY = dy / scale;
+    if (distance < MOVE_DEAD_ZONE) {
+      joyDirectionX = joyDirectionY = 0;
+    } else {
+      joyDirectionX = Math.abs(joyX) >= 0.27 ? Math.sign(dx) : 0;
+      joyDirectionY = Math.abs(joyY) >= 0.27 ? Math.sign(dy) : 0;
+      if (joyDirectionX || joyDirectionY) player.dir = joyFacing();
+    }
     drawJoystick();
   }
 
   function resetJoystick(e) {
     if (e && e.pointerId !== joyPointerId) return;
-    joyPointerId = null; joyX = 0; joyY = 0;
-    keys.left = keys.right = keys.up = keys.down = false;
-    drawJoystick();
+    const surface = joySurface, pointerId = joyPointerId;
+    joyPointerId = null; joySurface = null;
+    joyX = joyY = joyDirectionX = joyDirectionY = 0;
+    joyCanvas.hidden = true;
+    if (surface && surface.hasPointerCapture(pointerId)) surface.releasePointerCapture(pointerId);
   }
-  joyCanvas.addEventListener('pointerdown', (e) => {
-    if (joyPointerId !== null) return;
+
+  function startJoystick(e) {
+    if (e.pointerType !== 'touch' || e.button !== 0 || joyPointerId !== null ||
+        state.screen !== 'play' || state.paused || document.hidden ||
+        e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
+    joySurface = e.currentTarget;
     joyPointerId = e.pointerId;
-    joyCanvas.setPointerCapture(e.pointerId);
+    joyOriginX = e.clientX; joyOriginY = e.clientY;
+    joySurface.setPointerCapture(e.pointerId);
+    joyCanvas.style.left = joyOriginX + 'px';
+    joyCanvas.style.top = joyOriginY + 'px';
+    joyCanvas.hidden = false;
     handleJoyPointer(e);
-  });
-  joyCanvas.addEventListener('pointermove', handleJoyPointer);
-  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-    joyCanvas.addEventListener(event, resetJoystick);
+  }
+
+  for (const surface of [document.getElementById('stage'), document.getElementById('mobile-controls')]) {
+    surface.addEventListener('pointerdown', startJoystick);
+    surface.addEventListener('pointermove', handleJoyPointer);
+    for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      surface.addEventListener(event, resetJoystick);
+    }
   }
   function resetTouchInput() {
     resetJoystick();
     meleeQueued = false;
   }
   window.addEventListener('blur', resetTouchInput);
+  window.addEventListener('pagehide', resetTouchInput);
   document.addEventListener('visibilitychange', () => { if (document.hidden) resetTouchInput(); });
   window.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'touch') document.body.classList.add('touch-controls');
