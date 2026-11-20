@@ -591,7 +591,7 @@
       const dx = player.x - m.x;
       const dy = player.y - m.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 8 && dist > 0.6) {
+      if (smokeTimer <= 0 && dist < 8 && dist > 0.6) {
         const mx = (dx / dist) * m.speed * dt;
         const my2 = (dy / dist) * m.speed * dt;
         const nnx = m.x + mx;
@@ -686,9 +686,11 @@
     // EXP
     const expGain = m.type === 'boss' ? 100 : (m.type === 'molecular' ? 30 : 10 + Math.floor(Math.random() * 11));
     gainExp(expGain);
+    const wasBoss = m.type === 'boss';
     room.monsters.splice(index, 1);
     playTone(520, 'sine', 0.08);
     saveGame();
+    if (wasBoss) bossVictory();
   }
 
   // === MELEE ATTACK ===
@@ -745,9 +747,10 @@
     }
   }
 
-  // === PLAYER DEATH (stub, Task 7) ===
+  // === PLAYER DEATH ===
   function playerDeath() {
-    state.screen = 'death';
+    state.screen = 'dead';
+    saveGame();
     document.getElementById('death-modal').classList.add('open');
   }
 
@@ -785,6 +788,7 @@
     updateMonsters(dt);
     updateDrops(dt);
     updateProjectiles(dt);
+    updateTraps(dt);
   }
 
   function render() {
@@ -794,6 +798,7 @@
       drawMonsters();
       drawDrops();
       drawProjectiles();
+      drawTrapsAndZones();
       drawPlayer();
     }
   }
@@ -809,6 +814,10 @@
       case 'z': case 'Z': case ' ': keys.attack = true; break;
       case 'x': case 'X': keys.shoot = true; break;
       case 'c': case 'C': cycleAmmo(); break;
+      case '1': useSkill(0); break;
+      case '2': useSkill(1); break;
+      case '3': useSkill(2); break;
+      case '4': useSkill(3); break;
     }
   });
   window.addEventListener('keyup', (e) => {
@@ -838,6 +847,163 @@
 
   // === SAVE (stub, Task 8) ===
   function saveGame() {}
+
+  // === SKILLS ===
+  let traps = [];
+  let smokeTimer = 0;
+  let acidZones = [];
+
+  function useSkill(slotIdx) {
+    const skillId = equippedSkills[slotIdx];
+    if (!skillId) return;
+    const recipe = RECIPES.find(r => r.id === skillId);
+    if (!recipe || player.mp < recipe.mp) return;
+    player.mp -= recipe.mp;
+    updateHUD();
+    playTone(600, 'sine', 0.1);
+
+    const room = rooms[state.mapY][state.mapX];
+    switch (recipe.skill) {
+      case 'heal':
+        player.hp = Math.min(player.maxHp, player.hp + Math.floor(player.maxHp * 0.3));
+        showToast('淨化之水：HP 回復！');
+        break;
+      case 'aoe': {
+        const dmg = player.atk * 3;
+        room.monsters.forEach(m => {
+          const dist = Math.sqrt((m.x - player.x) ** 2 + (m.y - player.y) ** 2);
+          if (dist < 3) m.hp -= dmg;
+        });
+        for (let i = room.monsters.length - 1; i >= 0; i--) {
+          if (room.monsters[i].hp <= 0) killMonster(room, i);
+        }
+        showToast('結晶爆破！');
+        break;
+      }
+      case 'smoke':
+        smokeTimer = 3;
+        showToast('煙霧彈：怪物暫時失明！');
+        break;
+      case 'trap':
+        traps.push({ x: player.x, y: player.y, life: 8, dmg: player.atk * 0.5 });
+        showToast('腐蝕陷阱已放置！');
+        break;
+      case 'shield':
+        player.shieldTimer = 2;
+        showToast('石盾：無敵 2 秒！');
+        break;
+      case 'explode': {
+        const dmg2 = player.atk * 5;
+        room.monsters.forEach(m => {
+          const dist = Math.sqrt((m.x - player.x) ** 2 + (m.y - player.y) ** 2);
+          if (dist < 5) m.hp -= dmg2;
+        });
+        for (let i = room.monsters.length - 1; i >= 0; i--) {
+          if (room.monsters[i].hp <= 0) killMonster(room, i);
+        }
+        showToast('甲烷爆炸！！！');
+        break;
+      }
+      case 'freeze':
+        room.monsters.forEach(m => {
+          const dist = Math.sqrt((m.x - player.x) ** 2 + (m.y - player.y) ** 2);
+          if (dist < 4) m.frozen = 2;
+        });
+        showToast('急凍結晶！');
+        break;
+      case 'acid':
+        acidZones.push({ x: player.x, y: player.y, dir: player.dir, life: 3, dmg: player.atk * 0.8 });
+        showToast('酸霧噴射！');
+        break;
+    }
+    saveGame();
+  }
+
+  function updateTraps(dt) {
+    const room = rooms[state.mapY][state.mapX];
+    for (let i = traps.length - 1; i >= 0; i--) {
+      traps[i].life -= dt;
+      if (traps[i].life <= 0) { traps.splice(i, 1); continue; }
+      room.monsters.forEach(m => {
+        const dist = Math.sqrt((m.x - traps[i].x) ** 2 + (m.y - traps[i].y) ** 2);
+        if (dist < 0.8) m.hp -= traps[i].dmg * dt;
+      });
+      for (let j = room.monsters.length - 1; j >= 0; j--) {
+        if (room.monsters[j].hp <= 0) killMonster(room, j);
+      }
+    }
+    // Acid zones
+    for (let i = acidZones.length - 1; i >= 0; i--) {
+      acidZones[i].life -= dt;
+      if (acidZones[i].life <= 0) { acidZones.splice(i, 1); continue; }
+      const az = acidZones[i];
+      const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+      const [adx, ady] = dirs[az.dir];
+      room.monsters.forEach(m => {
+        const relX = m.x - az.x, relY = m.y - az.y;
+        const proj = relX * adx + relY * ady;
+        if (proj > 0 && proj < 3) {
+          const perp = Math.abs(relX * ady - relY * adx);
+          if (perp < 1.5) m.hp -= az.dmg * dt;
+        }
+      });
+      for (let j = room.monsters.length - 1; j >= 0; j--) {
+        if (room.monsters[j].hp <= 0) killMonster(room, j);
+      }
+    }
+    // Smoke timer
+    if (smokeTimer > 0) smokeTimer -= dt;
+  }
+
+  function drawTrapsAndZones() {
+    traps.forEach(t => {
+      ctx.fillStyle = `rgba(34, 197, 94, ${0.3 + Math.sin(Date.now() / 200) * 0.15})`;
+      ctx.beginPath(); ctx.arc(t.x * tileSize, t.y * tileSize, tileSize * 0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#22c55e';
+      ctx.font = `${tileSize * 0.3}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('\u2620', t.x * tileSize, t.y * tileSize);
+    });
+    acidZones.forEach(az => {
+      const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+      const [adx, ady] = dirs[az.dir];
+      ctx.fillStyle = `rgba(163, 230, 53, ${0.2 + Math.sin(Date.now() / 150) * 0.1})`;
+      ctx.beginPath();
+      ctx.moveTo(az.x * tileSize, az.y * tileSize);
+      ctx.lineTo((az.x + adx * 3 + ady * 1.5) * tileSize, (az.y + ady * 3 + adx * 1.5) * tileSize);
+      ctx.lineTo((az.x + adx * 3 - ady * 1.5) * tileSize, (az.y + ady * 3 - adx * 1.5) * tileSize);
+      ctx.closePath(); ctx.fill();
+    });
+  }
+
+  // === BOSS VICTORY & RETURN TO TITLE ===
+  function bossVictory() {
+    state.screen = 'victory';
+    const totalElems = Object.values(inventory).reduce((a, b) => a + b, 0);
+    const summary = `獲得經驗值 100，收集了 ${totalElems} 個元素！`;
+    document.getElementById('victory-summary').textContent = summary;
+    document.getElementById('victory-modal').classList.add('open');
+    saveGame();
+  }
+
+  function returnToTitle() {
+    state.screen = 'title';
+    player.hp = player.maxHp;
+    player.mp = player.maxMp;
+    projectiles = []; traps = []; acidZones = []; smokeTimer = 0;
+    document.getElementById('death-modal').classList.remove('open');
+    document.getElementById('victory-modal').classList.remove('open');
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('title-screen').style.display = 'flex';
+    saveGame();
+  }
+
+  document.getElementById('btn-death-return').addEventListener('click', () => {
+    returnToTitle();
+  });
+
+  document.getElementById('btn-victory-return').addEventListener('click', () => {
+    returnToTitle();
+  });
 
   // === CODEX & SKILLS ===
   let codex = [];
@@ -943,6 +1109,12 @@
       `<div class="recipe-row"><span>攻擊力</span><span>${player.atk}</span></div>` +
       `<div class="recipe-row"><span>已收集配方</span><span>${codex.length} / ${RECIPES.length}</span></div>`;
   }
+
+  // === SKILL BUTTON HANDLERS (mobile) ===
+  document.getElementById('sk1').addEventListener('click', () => useSkill(0));
+  document.getElementById('sk2').addEventListener('click', () => useSkill(1));
+  document.getElementById('sk3').addEventListener('click', () => useSkill(2));
+  document.getElementById('sk4').addEventListener('click', () => useSkill(3));
 
   // === MENU BUTTON HANDLERS ===
   document.querySelectorAll('.tab-btn').forEach(btn => {
