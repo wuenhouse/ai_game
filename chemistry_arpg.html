@@ -403,8 +403,145 @@
   // === GAME STATE ===
   const state = { screen: 'title', mapX: 2, mapY: 2, paused: false };
 
-  // === PROJECTILES (placeholder for Task 5) ===
+  // === INVENTORY ===
+  let inventory = { H: 0, O: 0, C: 0, Na: 0, Cl: 0, Ca: 0 };
+  let selectedAmmo = 'H';
+
+  function cycleAmmo() {
+    const syms = ELEMENTS.map(e => e.sym);
+    let idx = syms.indexOf(selectedAmmo);
+    for (let i = 1; i <= syms.length; i++) {
+      const next = syms[(idx + i) % syms.length];
+      if (inventory[next] > 0) { selectedAmmo = next; break; }
+    }
+    updateElemBar();
+  }
+
+  // === DROPS ===
+  function updateDrops(dt) {
+    const room = rooms[state.mapY][state.mapX];
+    for (let i = room.drops.length - 1; i >= 0; i--) {
+      const d = room.drops[i];
+      d.life -= dt;
+      if (d.life <= 0) { room.drops.splice(i, 1); continue; }
+      const dx = player.x - d.x;
+      const dy = player.y - d.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 0.8) {
+        inventory[d.sym] = (inventory[d.sym] || 0) + 1;
+        room.drops.splice(i, 1);
+        playTone(660, 'sine', 0.05);
+        showToast(`+1 ${d.sym}`);
+        updateElemBar();
+        updateHUD();
+      }
+    }
+  }
+
+  function drawDrops() {
+    const room = rooms[state.mapY][state.mapX];
+    room.drops.forEach(d => {
+      const px = d.x * tileSize;
+      const py = d.y * tileSize;
+      const bounce = Math.sin(Date.now() / 200 + d.x * 3) * 3;
+      const el = ELEMENTS.find(e => e.sym === d.sym);
+      // Glow
+      ctx.fillStyle = el ? el.color + '40' : '#ffffff40';
+      ctx.beginPath(); ctx.arc(px, py + bounce, tileSize * 0.35, 0, Math.PI * 2); ctx.fill();
+      // Letter
+      ctx.fillStyle = el ? el.color : '#fff';
+      ctx.font = `bold ${tileSize * 0.5}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.sym, px, py + bounce);
+    });
+  }
+
+  // === PROJECTILES ===
   let projectiles = [];
+
+  function shootProjectile() {
+    if (inventory[selectedAmmo] <= 0) return;
+    inventory[selectedAmmo]--;
+    updateElemBar();
+    const el = ELEMENTS.find(e => e.sym === selectedAmmo);
+    const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+    const [vx, vy] = dirs[player.dir];
+    projectiles.push({
+      x: player.x, y: player.y, vx: vx * el.speed, vy: vy * el.speed,
+      dmg: player.atk * el.dmgMul, fromPlayer: true, element: el, life: 2.5,
+      pierce: el.fx === 'pierce'
+    });
+    playTone(500, 'sine', 0.05);
+  }
+
+  function updateProjectiles(dt) {
+    const room = rooms[state.mapY][state.mapX];
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      // Wall collision
+      if (p.life <= 0 || isSolid(Math.floor(p.x), Math.floor(p.y))) {
+        projectiles.splice(i, 1); continue;
+      }
+      if (p.fromPlayer) {
+        // Hit monsters
+        for (let j = room.monsters.length - 1; j >= 0; j--) {
+          const m = room.monsters[j];
+          const dx = m.x - p.x, dy = m.y - p.y;
+          if (Math.sqrt(dx * dx + dy * dy) < 0.6) {
+            m.hp -= p.dmg;
+            // Special effects
+            if (p.element.fx === 'knockback') {
+              const kd = Math.sqrt(dx * dx + dy * dy) || 1;
+              m.x += (dx / kd) * 2; m.y += (dy / kd) * 2;
+            }
+            if (p.element.fx === 'dot') m.dotTimer = 3;
+            if (m.hp <= 0) killMonster(room, j);
+            else playTone(400, 'triangle', 0.04);
+            if (!p.pierce) { projectiles.splice(i, 1); break; }
+          }
+        }
+      } else {
+        // Enemy projectile hits player
+        const dx = player.x - p.x, dy = player.y - p.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 0.6) {
+          damagePlayer(p.dmg);
+          projectiles.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  function drawProjectiles() {
+    projectiles.forEach(p => {
+      const px = p.x * tileSize, py = p.y * tileSize;
+      ctx.fillStyle = p.element.color;
+      ctx.beginPath(); ctx.arc(px, py, tileSize * 0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${tileSize * 0.25}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.element.sym, px, py);
+    });
+  }
+
+  // === HUD UPDATE ===
+  function updateHUD() {
+    document.getElementById('hp-fill').style.width = `${(player.hp / player.maxHp) * 100}%`;
+    document.getElementById('mp-fill').style.width = `${(player.mp / player.maxMp) * 100}%`;
+    document.getElementById('hud-lv').textContent = player.level;
+  }
+
+  function updateElemBar() {
+    const bar = document.getElementById('elem-bar');
+    bar.innerHTML = ELEMENTS.map(e =>
+      `<div class="elem-slot ${e.sym === selectedAmmo ? 'active' : ''}" data-sym="${e.sym}">` +
+      `<span style="color:${e.color}">${e.sym}</span>:${inventory[e.sym] || 0}</div>`
+    ).join('');
+    bar.querySelectorAll('.elem-slot').forEach(el => {
+      el.addEventListener('click', () => { selectedAmmo = el.dataset.sym; updateElemBar(); });
+    });
+  }
 
   // === MONSTERS ===
   function spawnMonsters(room, mx, my) {
@@ -551,6 +688,7 @@
     gainExp(expGain);
     room.monsters.splice(index, 1);
     playTone(520, 'sine', 0.08);
+    saveGame();
   }
 
   // === MELEE ATTACK ===
@@ -643,7 +781,10 @@
   function update(dt) {
     updatePlayer(dt);
     if (keys.attack) { meleeAttack(); keys.attack = false; }
+    if (keys.shoot) { shootProjectile(); keys.shoot = false; }
     updateMonsters(dt);
+    updateDrops(dt);
+    updateProjectiles(dt);
   }
 
   function render() {
@@ -651,6 +792,8 @@
     if (state.screen === 'play') {
       drawRoom();
       drawMonsters();
+      drawDrops();
+      drawProjectiles();
       drawPlayer();
     }
   }
@@ -665,6 +808,7 @@
       case 'ArrowRight': case 'd': case 'D': keys.right = true; break;
       case 'z': case 'Z': case ' ': keys.attack = true; break;
       case 'x': case 'X': keys.shoot = true; break;
+      case 'c': case 'C': cycleAmmo(); break;
     }
   });
   window.addEventListener('keyup', (e) => {
@@ -688,6 +832,8 @@
     document.getElementById('title-screen').style.display = 'none';
     document.getElementById('game-screen').style.display = 'flex';
     resizeCanvas();
+    updateElemBar();
+    updateHUD();
   });
 
   // === INIT ===
