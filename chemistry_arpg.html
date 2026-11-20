@@ -830,6 +830,25 @@
     ctx.restore();
   }
 
+  function drawArcherGold(left, top, size, dir, stage) {
+    // Overlay the gold embroidery in atlas space; keep the face and bow unobstructed.
+    const marks = {
+      down:[[47,72,44,81],[74,72,77,81]], left:[[62,70,64,79],[71,70,75,79]],
+      right:[[46,70,43,79],[54,70,52,79]], up:[[52,68,48,78],[66,68,71,78]]
+    }[dir];
+    const k = size / 120;
+    ctx.save();
+    ctx.shadowColor = stage === 2 ? '#ffb32d' : '#ffc453';
+    ctx.shadowBlur = stage === 2 ? 7 : 3;
+    ctx.strokeStyle = stage === 2 ? '#fff2a6' : '#ffe191';
+    ctx.lineWidth = Math.max(1.5, k * 3.5);
+    for (const [x1,y1,x2,y2] of marks.slice(0, stage)) {
+      ctx.beginPath(); ctx.moveTo(left + x1*k, top + y1*k);
+      ctx.lineTo(left + x2*k, top + y2*k); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function drawPlayer() {
     const px = Math.round(player.x * tileSize);
     const py = Math.round(player.y * tileSize);
@@ -851,8 +870,17 @@
       const stage = bowInput === null ? 0 : bowStage(performance.now() - bowStartedAt);
       const pose = hurt ? 'hurt' : player.atkTimer > 0 ? 'release'
         : bowInput !== null ? 'charge' : player.walking ? 'walk' : 'idle';
-      drawArcherSprite(ctx, px, footY, size, hurt ? player.hurtDir : pose === 'release' ? player.attackDir : player.dir,
-        pose, Math.floor(player.walkPhase), player.walking, stage);
+      const archerDir = hurt ? player.hurtDir : pose === 'release' ? player.attackDir : player.dir;
+      const gait = Math.floor(player.walkPhase) & 3;
+      const row = pose === 'hurt' ? 5 : pose === 'charge' ? 1 : pose === 'release' ? 2
+        : pose === 'walk' ? [3, 0, 4, 0][gait] : 0;
+      const bob = pose === 'charge' && player.walking && (gait & 1) ? Math.max(1, Math.round(size / 90)) : 0;
+      if (drawArt(archerArt, row * 4 + DIR_FRAME[archerDir], left, top - bob, size, size)) {
+        if (stage > 0 && pose === 'charge') drawArcherGold(left, top - bob, size, archerDir, stage);
+      } else {
+        drawArcherSprite(ctx, px, footY, Math.round(size * 0.70), archerDir,
+          pose, gait, player.walking, stage);
+      }
       ctx.restore();
       return;
     }
@@ -903,6 +931,7 @@
   const heroArt = loadArt('hero.png', 40, 4, 3);
   const heroHiResArt = loadArt('hero-hd.png', 120, 4, 3);
   const heroWalkArt = loadArt('hero-walk.png', 120, 4, 4);
+  const archerArt = loadArt('archer-hd.svg', 120, 4, 6);
   const heroHurtArt = loadArt('hero-hurt.png', 120, 4, 1);
   const combatArt = loadArt('combat.png', 48, 4, 3);
   const monsterAtlas = new Image();
@@ -2487,7 +2516,14 @@
   document.getElementById('pick-mage').addEventListener('click', () => chooseHero('mage'));
   document.getElementById('pick-archer').addEventListener('click', () => chooseHero('archer'));
   const archerPreview = document.getElementById('archer-preview').getContext('2d');
-  drawArcherSprite(archerPreview, 22, 52, 45, 'down', 'idle', 0, false);
+  drawArcherSprite(archerPreview, 24, 41, 34, 'down', 'idle', 0, false);
+  const drawArcherCard = () => {
+    archerPreview.clearRect(0, 0, 48, 54);
+    archerPreview.imageSmoothingEnabled = false;
+    archerPreview.drawImage(archerArt.img, 0, 0, 120, 120, 0, 0, 48, 48);
+  };
+  if (archerArt.img.complete && archerArt.img.naturalWidth) drawArcherCard();
+  else archerArt.img.addEventListener('load', drawArcherCard, {once:true});
   const magePreview = document.getElementById('mage-preview').getContext('2d');
   // drawArt targets the world canvas; draw the preview directly from the atlas.
   const drawMageCard = () => { magePreview.imageSmoothingEnabled = false; magePreview.drawImage(heroHiResArt.img, 0, 0, 120, 120, 0, 0, 48, 48); };
