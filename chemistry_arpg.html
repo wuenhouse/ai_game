@@ -325,7 +325,7 @@
       <p class="help-start">先試試 W A S D，或方向鍵移動！</p>
       <div class="archer-guide">
         <p>WASD／方向鍵移動。按住 Z 或空白鍵集氣，放開射擊。可邊走邊集氣。</p>
-        <p>短按單箭、第一段三箭、第二段大箭。弓手不能施放技能。</p>
+        <p>短按單箭。衣服亮一道金紋是三箭、兩道是大箭。弓手不能施放技能。</p>
         <p id="bow-desktop-status"></p>
       </div>
       <div class="mage-guide">
@@ -761,7 +761,7 @@
   const AMMO_FRAME = { H: 1, O: 2, C: 3, Na: 4, Cl: 5, Ca: 6 };
   const HERO_VISUAL_SCALE = 1.18;
 
-  function drawArcherSprite(ctx, x, y, size, dir, pose, frame, moving) {
+  function drawArcherSprite(ctx, x, y, size, dir, pose, frame, moving, chargeStage = 0) {
     const s = size / 34, back = dir === 'up', side = dir === 'left' || dir === 'right';
     const lean = pose === 'hurt' ? -2 : 0;
     const stride = moving && pose !== 'hurt' ? [2,0,-2,0][frame & 3] : 0;
@@ -791,6 +791,20 @@
     rect(-6,-12,5,4,'q'); rect(-3,-20,6,11,'n'); rect(-5,-12,10,2,'d');
     if (back) { rect(-4,-20,8,10,'b'); rect(-1,-17,3,4,'t'); }
     else { rect(-2,-14,4,2,'g'); rect(3,-14,2,3,'t'); }
+    // Charge light is painted on the coat, so it moves with the character.
+    if (chargeStage > 0) {
+      ctx.save();
+      ctx.shadowColor = chargeStage === 2 ? '#ffb737' : '#ffc966';
+      ctx.shadowBlur = chargeStage === 2 ? 7 : 3;
+      const stripe = (offset) => {
+        rect(-5 + offset,-20,2,3,'l');
+        rect(-4 + offset,-17,2,3,'l');
+        rect(-3 + offset,-14,2,2,'l');
+      };
+      stripe(0);
+      if (chargeStage === 2) stripe(5);
+      ctx.restore();
+    }
     rect(-6,-34,12,2,'e'); rect(-8,-32,16,3,'e'); rect(-9,-29,18,6,'e'); rect(-7,-23,14,3,'e');
     rect(-6,-32,12,3,'p'); rect(-7,-30,14,7,'h'); rect(-5,-31,6,1,'r');
     if (!back) {
@@ -838,12 +852,7 @@
       const pose = hurt ? 'hurt' : player.atkTimer > 0 ? 'release'
         : bowInput !== null ? 'charge' : player.walking ? 'walk' : 'idle';
       drawArcherSprite(ctx, px, footY, size, hurt ? player.hurtDir : pose === 'release' ? player.attackDir : player.dir,
-        pose, Math.floor(player.walkPhase), player.walking);
-      if (stage > 0) {
-        ctx.strokeStyle = stage === 2 ? '#fde68a' : '#67e8f9';
-        ctx.lineWidth = Math.max(1, tileSize * 0.045);
-        ctx.beginPath(); ctx.arc(px, py, tileSize * 0.64, 0, Math.PI * 2); ctx.stroke();
-      }
+        pose, Math.floor(player.walkPhase), player.walking, stage);
       ctx.restore();
       return;
     }
@@ -2192,7 +2201,7 @@
 
   function renderHelpTab() {
     if (isArcher() && state.screen === 'play') {
-      document.getElementById('tab-help').textContent = '馬尾弓手：按住弓箭按鈕（鍵盤 Z 或空白鍵）集氣，放開射箭。短按單箭，第一段三箭散射，第二段大箭。可以邊走邊集氣；射出後短暫硬直，箭碰到地形或怪物就停。你仍可以合成、收集與閱讀圖鑑，但弓手不能施放技能。';
+      document.getElementById('tab-help').textContent = '馬尾弓手：按住弓箭按鈕（鍵盤 Z 或空白鍵）集氣，放開射箭。短按單箭；衣服亮一道金紋是三箭散射、亮兩道是大箭。可以邊走邊集氣；射出後短暫硬直，箭碰到地形或怪物就停。你仍可以合成、收集與閱讀圖鑑，但弓手不能施放技能。';
       return;
     }
     document.getElementById('tab-help').innerHTML =
