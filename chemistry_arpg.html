@@ -67,7 +67,7 @@
       color: #f8fafc; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; }
     .abtn:active { background: #334155; }
-    .abtn.atk { border-color: #ef4444; background: #450a0a; }
+    .abtn.atk { border-color: #ef4444; background: #450a0a; touch-action: none; }
     .abtn.shoot { border-color: #3b82f6; background: #172554; }
     .skill-row { display: flex; width: 100%; max-width: 480px; gap: 4px; }
     .skill-btn { flex: 1; min-width: 0; padding: 4px; min-height: 44px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
@@ -593,6 +593,9 @@
     atkTimer: 0, attackDir: 'down', shotTimer: 0, invincible: 0, shieldTimer: 0,
     walkPhase: 0, walking: false, hurtTimer: 0, hurtDir: 'down', knockback: null, impactOrigin: null };
 
+  const MELEE_BUFFER_SECONDS = 0.10;
+  let meleeQueued = false;
+
   const keys = { up: false, down: false, left: false, right: false, attack: false, shoot: false };
 
   function initPlayer() {
@@ -601,6 +604,7 @@
     player.hp = player.maxHp;
     player.mp = player.maxMp;
     player.atkTimer = 0;
+    meleeQueued = false;
     player.attackDir = player.dir;
     player.shotTimer = 0;
     castVisuals = [];
@@ -1250,6 +1254,16 @@
   }
 
   // === MELEE ATTACK ===
+  function requestMobileMelee() {
+    if (state.screen !== 'play' || state.paused || document.hidden) return;
+    if (player.atkTimer <= 0) {
+      meleeQueued = false;
+      meleeAttack();
+    } else if (player.atkTimer <= MELEE_BUFFER_SECONDS) {
+      meleeQueued = true;
+    }
+  }
+
   function meleeAttack() {
     if (player.atkTimer > 0) return;
     player.atkTimer = 0.3;
@@ -1308,6 +1322,7 @@
   // === PLAYER DEATH ===
   function playerDeath() {
     state.screen = 'dead';
+    meleeQueued = false;
     window._stats.deaths = (window._stats.deaths || 0) + 1;
     saveGame();
     document.getElementById('death-modal').classList.add('open');
@@ -1352,6 +1367,10 @@
 
   function update(dt) {
     updatePlayer(dt);
+    if (meleeQueued && player.atkTimer <= 0) {
+      meleeQueued = false;
+      if (state.screen === 'play' && !state.paused && !document.hidden) meleeAttack();
+    }
     if (keys.attack) { meleeAttack(); keys.attack = false; }
     if (keys.shoot) { shootProjectile(); keys.shoot = false; }
     updateMonsters(dt);
@@ -1667,6 +1686,7 @@
   // === BOSS VICTORY & RETURN TO TITLE ===
   function bossVictory() {
     state.screen = 'victory';
+    meleeQueued = false;
     const totalElems = Object.values(inventory).reduce((a, b) => a + b, 0);
     const summary = `獲得經驗值 100，收集了 ${totalElems} 個元素！`;
     document.getElementById('victory-summary').textContent = summary;
@@ -1676,6 +1696,7 @@
 
   function returnToTitle() {
     state.screen = 'title';
+    meleeQueued = false;
     resetPlayerMotion();
     player.hp = player.maxHp;
     player.mp = player.maxMp;
@@ -1737,6 +1758,7 @@
 
   function openMenu(tab = 'inv') {
     state.paused = true;
+    meleeQueued = false;
     const modal = document.getElementById('menu-modal');
     modal.classList.add('open');
     document.querySelectorAll('.tab-btn').forEach(b => {
@@ -2020,15 +2042,30 @@
   for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
     joyCanvas.addEventListener(event, resetJoystick);
   }
-  window.addEventListener('blur', () => resetJoystick());
-  document.addEventListener('visibilitychange', () => { if (document.hidden) resetJoystick(); });
+  function resetTouchInput() {
+    resetJoystick();
+    meleeQueued = false;
+  }
+  window.addEventListener('blur', resetTouchInput);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetTouchInput(); });
   window.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'touch') document.body.classList.add('touch-controls');
   }, { passive: true });
 
   // === MOBILE ACTION BUTTONS ===
-  // Click fires once for touch, mouse and keyboard without double activation.
-  document.getElementById('btn-atk').addEventListener('click', () => meleeAttack());
+  const meleeButton = document.getElementById('btn-atk');
+  let meleePointerType = '';
+  meleeButton.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    meleePointerType = e.pointerType;
+    // Allow a second touch while another finger owns the joystick.
+    if (e.pointerType === 'touch') requestMobileMelee();
+  });
+  meleeButton.addEventListener('click', (e) => {
+    if (e.pointerType === 'touch' || e.sourceCapabilities?.firesTouchEvents ||
+        (!e.pointerType && e.detail > 0 && meleePointerType === 'touch')) return;
+    if (state.screen === 'play' && !state.paused) meleeAttack();
+  });
   document.getElementById('btn-skill').addEventListener('click', () => useSkill(selectedSkillSlot));
   document.getElementById('btn-shoot').addEventListener('click', () => shootProjectile());
 
