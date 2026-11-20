@@ -764,9 +764,19 @@
     toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
   }
 
-  // === AUDIO (stub, Task 8) ===
-  function playTone(freq, type, dur) {
-    // Task 8 will implement audio
+  // === AUDIO ===
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playTone(freq, type = 'sine', dur = 0.08) {
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + dur);
+    } catch (e) { /* audio not available */ }
   }
 
   // === GAME LOOP ===
@@ -789,6 +799,9 @@
     updateDrops(dt);
     updateProjectiles(dt);
     updateTraps(dt);
+    // MP regeneration
+    player.mp = Math.min(player.maxMp, player.mp + 1.5 * dt);
+    updateHUD();
   }
 
   function render() {
@@ -800,6 +813,7 @@
       drawProjectiles();
       drawTrapsAndZones();
       drawPlayer();
+      drawMinimap();
     }
   }
 
@@ -845,8 +859,48 @@
     updateHUD();
   });
 
-  // === SAVE (stub, Task 8) ===
-  function saveGame() {}
+  // === SAVE / LOAD ===
+  const SAVE_KEY = 'chem_arpg_save';
+  if (!window._stats) window._stats = { totalKills: 0, totalSyntheses: 0, deaths: 0 };
+
+  function saveGame() {
+    const data = {
+      player: { level: player.level, exp: player.exp, maxHp: player.maxHp, maxMp: player.maxMp,
+        atk: player.atk, currentHp: player.hp, currentMp: player.mp },
+      inventory: { ...inventory },
+      codex: [...codex],
+      unlockedSkills: [...unlockedSkills],
+      equippedSkills: [...equippedSkills],
+      selectedAmmo,
+      stats: { totalKills: window._stats.totalKills || 0,
+               totalSyntheses: codex.length,
+               deaths: window._stats.deaths || 0 }
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  }
+
+  function loadGame() {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      if (data.player) {
+        player.level = data.player.level || 1;
+        player.exp   = data.player.exp   || 0;
+        player.maxHp = data.player.maxHp || 50;
+        player.maxMp = data.player.maxMp || 20;
+        player.atk   = data.player.atk   || 5;
+        player.hp    = data.player.currentHp || player.maxHp;
+        player.mp    = data.player.currentMp || player.maxMp;
+      }
+      if (data.inventory)     Object.assign(inventory, data.inventory);
+      if (data.codex)         codex          = data.codex;
+      if (data.unlockedSkills) unlockedSkills = data.unlockedSkills;
+      if (data.equippedSkills) equippedSkills = data.equippedSkills;
+      if (data.selectedAmmo)  selectedAmmo   = data.selectedAmmo;
+      if (data.stats)         window._stats  = data.stats;
+    } catch (e) { /* corrupted save, ignore */ }
+  }
 
   // === SKILLS ===
   let traps = [];
@@ -995,6 +1049,7 @@
     document.getElementById('game-screen').style.display = 'none';
     document.getElementById('title-screen').style.display = 'flex';
     saveGame();
+    updateTitleStats();
   }
 
   document.getElementById('btn-death-return').addEventListener('click', () => {
@@ -1135,9 +1190,94 @@
     if (e.key === 'Escape') closeMenu();
   });
 
+  // === VIRTUAL JOYSTICK ===
+  const joyCanvas = document.getElementById('joystick');
+  const joyCtx = joyCanvas.getContext('2d');
+  let joyActive = false, joyX = 0, joyY = 0;
+
+  function drawJoystick() {
+    joyCtx.clearRect(0, 0, 120, 120);
+    // Base circle
+    joyCtx.strokeStyle = '#334155'; joyCtx.lineWidth = 2;
+    joyCtx.beginPath(); joyCtx.arc(60, 60, 50, 0, Math.PI * 2); joyCtx.stroke();
+    // Thumb
+    const tx = 60 + joyX * 30, ty = 60 + joyY * 30;
+    joyCtx.fillStyle = '#38bdf8';
+    joyCtx.beginPath(); joyCtx.arc(tx, ty, 18, 0, Math.PI * 2); joyCtx.fill();
+  }
+  drawJoystick();
+
+  function handleJoyTouch(e) {
+    e.preventDefault();
+    const rect = joyCanvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const dx = (touch.clientX - rect.left - 60) / 50;
+    const dy = (touch.clientY - rect.top  - 60) / 50;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len > 1) { joyX = dx / len; joyY = dy / len; }
+    else          { joyX = dx;      joyY = dy; }
+    keys.left  = joyX < -0.3; keys.right = joyX > 0.3;
+    keys.up    = joyY < -0.3; keys.down  = joyY > 0.3;
+    if (Math.abs(joyX) > Math.abs(joyY)) player.dir = joyX > 0 ? 'right' : 'left';
+    else if (Math.abs(joyY) > 0.3)       player.dir = joyY > 0 ? 'down'  : 'up';
+    drawJoystick();
+  }
+
+  joyCanvas.addEventListener('touchstart', (e) => { joyActive = true; handleJoyTouch(e); }, { passive: false });
+  joyCanvas.addEventListener('touchmove', handleJoyTouch, { passive: false });
+  joyCanvas.addEventListener('touchend', () => {
+    joyActive = false; joyX = 0; joyY = 0;
+    keys.left = keys.right = keys.up = keys.down = false;
+    drawJoystick();
+  });
+
+  // === MOBILE ACTION BUTTONS ===
+  document.getElementById('btn-atk').addEventListener('pointerdown', (e) => { e.preventDefault(); meleeAttack(); });
+  document.getElementById('btn-shoot').addEventListener('pointerdown', (e) => { e.preventDefault(); shootProjectile(); });
+  // sk1-sk4 override the click handlers from Task 7 with pointerdown for responsiveness
+  ['sk1','sk2','sk3','sk4'].forEach((id, i) => {
+    document.getElementById(id).addEventListener('pointerdown', (e) => { e.preventDefault(); useSkill(i); });
+  });
+
+  // === MINIMAP ===
+  function drawMinimap() {
+    const ms = 8;
+    const ox = canvas.width - MAP_W * ms - 8;
+    const oy = 8;
+    ctx.fillStyle = 'rgba(15,23,42,0.8)';
+    ctx.fillRect(ox - 2, oy - 2, MAP_W * ms + 4, MAP_H * ms + 4);
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        const room = rooms[y][x];
+        if (x === state.mapX && y === state.mapY) {
+          ctx.fillStyle = '#38bdf8';
+        } else if (!room.generated) {
+          ctx.fillStyle = '#1e293b';
+        } else if (room.type === 'boss') {
+          ctx.fillStyle = '#dc2626';
+        } else if (room.type === 'treasure') {
+          ctx.fillStyle = '#fbbf24';
+        } else {
+          ctx.fillStyle = '#334155';
+        }
+        ctx.fillRect(ox + x * ms, oy + y * ms, ms - 1, ms - 1);
+      }
+    }
+  }
+
+  // === TITLE STATS ===
+  function updateTitleStats() {
+    const el = document.getElementById('title-stats');
+    if (!el) return;
+    const totalElems = Object.values(inventory).reduce((a, b) => a + b, 0);
+    el.textContent = `Lv.${player.level} ｜ 圖鑑 ${codex.length}/${RECIPES.length} ｜ 元素 ${totalElems} 個`;
+  }
+
   // === INIT ===
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
+  loadGame();
+  updateTitleStats();
   requestAnimationFrame(gameLoop);
 })();
 </script>
