@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>元素獵人 | Chem ARPG</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    html, body { width: 100%; height: 100dvh; overflow: hidden; background: #090d16; color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; }
+    #app { display: flex; flex-direction: column; height: 100dvh; max-width: 560px; margin: 0 auto; }
+    /* HUD bar */
+    .hud { padding: 8px 12px; background: #0f172a; border-bottom: 1px solid #1e293b;
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; font-weight: 700; z-index: 5; }
+    .bar { height: 14px; border-radius: 7px; overflow: hidden; background: #1e293b; flex: 1; min-width: 60px; }
+    .bar-fill { height: 100%; border-radius: 7px; transition: width 0.2s; }
+    .bar-hp .bar-fill { background: linear-gradient(90deg, #dc2626, #ef4444); }
+    .bar-mp .bar-fill { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .hud-label { color: #94a3b8; font-size: 11px; }
+    .hud-val { color: #38bdf8; }
+    /* Element bar */
+    .elem-bar { padding: 4px 12px; background: #0b1120; border-bottom: 1px solid #1e293b;
+      display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 700; z-index: 5; }
+    .elem-slot { padding: 2px 8px; border-radius: 6px; background: #1e293b; border: 1px solid #334155; }
+    .elem-slot.active { border-color: #fbbf24; background: #332800; }
+    /* Canvas area */
+    .stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    canvas#game { background: #0f172a; border-radius: 4px; touch-action: none; }
+    /* Mobile controls */
+    .controls { padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: #0f172a;
+      border-top: 1px solid #1e293b; display: none; gap: 8px; z-index: 5; }
+    .ctrl-left { display: flex; align-items: center; justify-content: center; width: 120px; height: 120px; position: relative; }
+    .ctrl-right { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin-left: auto; }
+    .abtn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #334155; background: #1e293b;
+      color: #f8fafc; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation; }
+    .abtn:active { background: #334155; }
+    .abtn.atk { border-color: #ef4444; background: #450a0a; }
+    .abtn.shoot { border-color: #3b82f6; background: #172554; }
+    .skill-row { display: flex; gap: 4px; }
+    .skill-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
+      color: #94a3b8; font-size: 11px; font-weight: 700; touch-action: manipulation; }
+    .menu-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
+      color: #fbbf24; font-size: 12px; font-weight: 700; touch-action: manipulation; }
+    /* Modals */
+    .modal { position: fixed; inset: 0; background: rgba(2,6,23,0.85); z-index: 50;
+      display: none; align-items: center; justify-content: center; padding: 16px; }
+    .modal.open { display: flex; }
+    .modal-card { background: #0f172a; border: 1px solid #334155; border-radius: 20px;
+      padding: 20px; width: 100%; max-width: 420px; max-height: 80dvh; overflow-y: auto; }
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
+    .tab-btn { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
+      color: #94a3b8; font-size: 13px; font-weight: 700; text-align: center; }
+    .tab-btn.active { background: #334155; color: #f8fafc; border-color: #38bdf8; }
+    .recipe-row { display: flex; justify-content: space-between; align-items: center;
+      padding: 10px; background: #1e293b; border-radius: 10px; margin-bottom: 6px; font-size: 13px; }
+    .recipe-row.locked { opacity: 0.4; }
+    .synth-btn { padding: 8px 16px; border-radius: 10px; border: none; background: #059669; color: #fff;
+      font-weight: 700; font-size: 13px; }
+    .synth-btn:disabled { background: #334155; color: #64748b; }
+    /* Title screen */
+    .title-screen { display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100dvh; gap: 16px; text-align: center; padding: 24px; }
+    .title-screen h1 { font-size: 32px; font-weight: 900; }
+    .title-screen .start-btn { padding: 14px 40px; border-radius: 14px; border: none;
+      background: linear-gradient(90deg, #0284c7, #2563eb); color: #fff; font-size: 18px; font-weight: 800; }
+    .title-screen .sub-btn { padding: 10px 24px; border-radius: 10px; border: 1px solid #334155;
+      background: #1e293b; color: #94a3b8; font-size: 14px; font-weight: 700; }
+    /* Toast */
+    #toast { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(90deg, #059669, #10b981); color: #fff; padding: 6px 16px;
+      border-radius: 999px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s; z-index: 20; white-space: nowrap; box-shadow: 0 6px 15px rgba(16,185,129,0.4); }
+    #toast.show { opacity: 1; }
+    /* Desktop: hide mobile controls */
+    @media (hover: none) and (pointer: coarse) { .controls { display: flex !important; } }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- Title Screen -->
+  <div class="title-screen" id="title-screen">
+    <div style="font-size:64px;">⚗️</div>
+    <h1>元素獵人</h1>
+    <p style="color:#94a3b8;font-size:14px;">化學元素 ARPG — 收集元素、合成化合物、探索隨機地牢</p>
+    <div id="title-stats" style="color:#64748b;font-size:12px;"></div>
+    <button class="start-btn" id="btn-start">出發探索</button>
+    <div style="display:flex;gap:8px;">
+      <button class="sub-btn" id="btn-title-codex">圖鑑</button>
+      <button class="sub-btn" id="btn-title-status">角色狀態</button>
+    </div>
+  </div>
+  <!-- Game Screen -->
+  <div id="game-screen" style="display:none;flex-direction:column;height:100dvh;">
+    <div class="hud" id="hud">
+      <span class="hud-label">HP</span>
+      <div class="bar bar-hp"><div class="bar-fill" id="hp-fill" style="width:100%"></div></div>
+      <span class="hud-label">MP</span>
+      <div class="bar bar-mp"><div class="bar-fill" id="mp-fill" style="width:100%"></div></div>
+      <span>Lv.<span class="hud-val" id="hud-lv">1</span></span>
+      <button class="menu-btn" id="btn-menu">選單</button>
+    </div>
+    <div class="elem-bar" id="elem-bar"></div>
+    <div class="stage" id="stage">
+      <div id="toast"></div>
+      <canvas id="game"></canvas>
+    </div>
+    <div class="controls" id="mobile-controls">
+      <div class="ctrl-left"><canvas id="joystick" width="120" height="120"></canvas></div>
+      <div class="ctrl-right">
+        <div class="skill-row">
+          <button class="skill-btn" id="sk1">技1</button>
+          <button class="skill-btn" id="sk2">技2</button>
+          <button class="skill-btn" id="sk3">技3</button>
+          <button class="skill-btn" id="sk4">技4</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="abtn atk" id="btn-atk">⚔️</button>
+          <button class="abtn shoot" id="btn-shoot">🔵</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Menu Modal -->
+<div class="modal" id="menu-modal">
+  <div class="modal-card">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="inv">背包</button>
+      <button class="tab-btn" data-tab="codex">圖鑑</button>
+      <button class="tab-btn" data-tab="status">狀態</button>
+    </div>
+    <div id="tab-inv"></div>
+    <div id="tab-codex" style="display:none"></div>
+    <div id="tab-status" style="display:none"></div>
+    <button class="menu-btn" id="btn-close-menu" style="width:100%;margin-top:12px;">關閉</button>
+  </div>
+</div>
+<!-- Death Modal -->
+<div class="modal" id="death-modal">
+  <div class="modal-card" style="text-align:center;">
+    <h2 style="margin-bottom:8px;">💀 實驗失敗...</h2>
+    <p style="color:#94a3b8;margin-bottom:16px;">你在探索中倒下了，但收集到的元素與經驗已保存。</p>
+    <button class="start-btn" id="btn-death-return" style="font-size:15px;padding:12px 30px;">返回大廳</button>
+  </div>
+</div>
+<!-- Victory Modal -->
+<div class="modal" id="victory-modal">
+  <div class="modal-card" style="text-align:center;">
+    <h2 style="margin-bottom:8px;">🏆 Boss 擊敗！</h2>
+    <p style="color:#94a3b8;" id="victory-summary"></p>
+    <button class="start-btn" id="btn-victory-return" style="font-size:15px;padding:12px 30px;margin-top:16px;">返回大廳</button>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // === CONSTANTS ===
+  const COLS = 16, ROWS = 12, MAP_W = 5, MAP_H = 5;
+  const TILE = { FLOOR: 0, WALL: 1, ROCK: 2, GRASS: 3, WATER: 4 };
+  const TILE_COLORS = {
+    [TILE.FLOOR]: '#131c31', [TILE.WALL]: '#334155', [TILE.ROCK]: '#475569',
+    [TILE.GRASS]: '#14532d', [TILE.WATER]: '#0c4a6e'
+  };
+  const ELEMENTS = [
+    { sym: 'H', name: '氫', color: '#0284c7', speed: 7, dmgMul: 0.6, fx: null },
+    { sym: 'O', name: '氧', color: '#dc2626', speed: 5, dmgMul: 1.0, fx: null },
+    { sym: 'C', name: '碳', color: '#475569', speed: 3.5, dmgMul: 1.5, fx: null },
+    { sym: 'Na', name: '鈉', color: '#7c3aed', speed: 5, dmgMul: 0.8, fx: 'knockback' },
+    { sym: 'Cl', name: '氯', color: '#059669', speed: 5, dmgMul: 0.8, fx: 'dot' },
+    { sym: 'Ca', name: '鈣', color: '#d97706', speed: 3.5, dmgMul: 1.2, fx: 'pierce' }
+  ];
+  const RECIPES = [
+    { id: 'H2O', formula: 'H₂O', name: '淨化之水', req: { H: 2, O: 1 }, pts: 200, mp: 15, skill: 'heal',
+      desc: '回復 30% 最大 HP' },
+    { id: 'NaCl', formula: 'NaCl', name: '結晶爆破', req: { Na: 1, Cl: 1 }, pts: 150, mp: 20, skill: 'aoe',
+      desc: '周圍 3 格範圍傷害' },
+    { id: 'CO2', formula: 'CO₂', name: '煙霧彈', req: { C: 1, O: 2 }, pts: 200, mp: 15, skill: 'smoke',
+      desc: '3 秒內周圍怪物停止追蹤' },
+    { id: 'NaOH', formula: 'NaOH', name: '腐蝕陷阱', req: { Na: 1, O: 1, H: 1 }, pts: 280, mp: 25, skill: 'trap',
+      desc: '放置陷阱，怪物踩到持續扣血' },
+    { id: 'CaCO3', formula: 'CaCO₃', name: '石盾', req: { Ca: 1, C: 1, O: 3 }, pts: 450, mp: 30, skill: 'shield',
+      desc: '2 秒無敵' },
+    { id: 'CH4', formula: 'CH₄', name: '甲烷爆炸', req: { C: 1, H: 4 }, pts: 380, mp: 40, skill: 'explode',
+      desc: '大範圍高傷害（5 格半徑）' },
+    { id: 'CaCl2', formula: 'CaCl₂', name: '急凍結晶', req: { Ca: 1, Cl: 2 }, pts: 240, mp: 25, skill: 'freeze',
+      desc: '凍結周圍怪物 2 秒' },
+    { id: 'HClO', formula: 'HClO', name: '酸霧', req: { H: 1, Cl: 1, O: 1 }, pts: 220, mp: 20, skill: 'acid',
+      desc: '前方錐形持續傷害 3 秒' }
+  ];
+
+  // ... (Tasks 2-8 will add code here)
+
+  // === CANVAS SETUP ===
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let tileSize = 32;
+
+  function resizeCanvas() {
+    const stage = document.getElementById('stage');
+    const maxW = stage.clientWidth - 8;
+    const maxH = stage.clientHeight - 8;
+    tileSize = Math.floor(Math.min(maxW / COLS, maxH / ROWS));
+    canvas.width = tileSize * COLS;
+    canvas.height = tileSize * ROWS;
+  }
+
+  // === GAME STATE ===
+  const state = { screen: 'title', mapX: 2, mapY: 2, paused: false };
+
+  // === GAME LOOP ===
+  let lastTime = 0;
+  function gameLoop(now) {
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+    if (state.screen === 'play' && !state.paused) {
+      update(dt);
+    }
+    render();
+    requestAnimationFrame(gameLoop);
+  }
+
+  function update(dt) {
+    // placeholder — filled by later tasks
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // placeholder — filled by later tasks
+  }
+
+  // === INIT ===
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+  requestAnimationFrame(gameLoop);
+})();
+</script>
+</body>
+</html>
