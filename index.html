@@ -182,6 +182,10 @@
     .feedback-heading h2 { font-size: 20px; line-height: 1.5; }
     .feedback-close { flex-shrink: 0; }
     .feedback-dialog form { display: grid; gap: 12px; }
+    .feedback-dialog [hidden], .feedback-dialog[data-posting="paused"] .discussion-reply-form { display: none; }
+    .feedback-privacy { color: #fde68a; background: #332b1c; border-radius: 8px; padding: 8px 10px;
+      font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+    .feedback-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
     .feedback-dialog label { display: grid; gap: 6px; font-size: 14px; }
     .feedback-dialog input, .feedback-dialog textarea {
       width: 100%; min-width: 0; padding: 10px; font: inherit; color: var(--text);
@@ -253,7 +257,10 @@
       <h2 id="feedback-title">意見與討論</h2>
       <button type="button" id="feedback-close" class="feedback-close" aria-label="關閉意見與討論">關閉</button>
     </div>
-    <form id="feedback-form" novalidate>
+    <p id="feedback-privacy" class="feedback-privacy">留言是公開的。請用暱稱，不要填自己或別人的真實姓名、學校、電話、地址或社群帳號等聯絡方式。</p>
+    <p id="feedback-paused" class="feedback-status" hidden>目前暫停發文與回覆，仍可看已發布的留言。</p>
+    <p id="feedback-cooldown" class="feedback-status" hidden></p>
+    <form id="feedback-form" novalidate aria-describedby="feedback-privacy">
       <label for="feedback-author">你的暱稱（最多 20 字）
         <input id="feedback-author" name="author" maxlength="20" autocomplete="nickname">
       </label>
@@ -263,8 +270,11 @@
       <button type="submit" class="feedback-action" disabled>發布主題</button>
     </form>
     <p id="feedback-status" class="feedback-status" role="status" aria-live="polite">讀取討論區中…</p>
-    <button type="button" id="feedback-refresh" class="feedback-action" hidden>重新整理討論</button>
+    <div class="feedback-actions">
+      <button type="button" id="feedback-refresh" class="feedback-action" hidden>重新整理討論</button>
+    </div>
     <section id="feedback-list" aria-label="討論主題"></section>
+    <button type="button" id="feedback-older" class="feedback-action" hidden>載入更早的主題</button>
   </dialog>
   <script type="module" src="./js/feedback.js"></script>
 </body>

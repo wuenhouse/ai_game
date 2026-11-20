@@ -47,6 +47,15 @@
         background: #1e293b; font: 12px ui-monospace, monospace; }
       .desktop-help .help-start { color: #fbbf24; margin: 12px 0; }
     }
+    @media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+      .play-area { display: grid; grid-template-columns: clamp(220px, 20vw, 280px) minmax(0, 1fr) clamp(220px, 20vw, 280px); }
+      .stage { grid-column: 2; }
+      .desktop-help { grid-column: 3; min-height: 0; }
+    }
+    @media (min-width: 760px) and (max-width: 1099px) and (hover: hover) and (pointer: fine) {
+      .play-area { flex-direction: column; }
+      .desktop-help { flex: 0 0 150px; margin: 4px 12px 8px; }
+    }
     canvas#game { background: #0f172a; border-radius: 4px; touch-action: none; image-rendering: pixelated; }
     /* Mobile controls */
     .controls { padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: #0f172a;
@@ -108,16 +117,50 @@
     .tab-btn.active { background: #334155; color: #f8fafc; border-color: #38bdf8; }
     .recipe-row { display: flex; justify-content: space-between; align-items: center;
       padding: 10px; background: #1e293b; border-radius: 10px; margin-bottom: 6px; font-size: 13px; }
-    #menu-modal.codex-view .modal-card { max-width: 560px; }
+    #menu-modal .modal-card { max-width: 560px; height: min(80dvh, 720px);
+      display: flex; flex-direction: column; overflow: hidden; }
+    #menu-modal .tab-bar { flex-shrink: 0; }
+    #menu-modal .tab-btn { min-width: 0; min-height: 44px; white-space: nowrap; }
+    .menu-content { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+    #btn-close-menu { flex-shrink: 0; min-height: 44px; }
+    .periodic-legend { color: #a5b4c8; font-size: 11px; line-height: 1.7; margin: 0 0 8px; }
+    .periodic-legend strong { color: #7dd3fc; }
+    .periodic-scroll { overflow-x: auto; margin-bottom: 8px; padding-bottom: 6px; }
+    .inventory-elements { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+    .inventory-element { padding: 10px 4px; border: 1px solid #334155; border-top: 3px solid var(--element-color);
+      border-radius: 10px; background: #1e293b; text-align: center; line-height: 1.5; }
+    .inventory-symbol { color: #e0f2fe; font-size: 22px; font-weight: 800; }
+    .inventory-name { color: #94a3b8; font-size: 11px; }
+    .inventory-count { color: #f8fafc; font-size: 18px; font-weight: 800; }
+    .periodic-open { display: block; width: 100%; margin-bottom: 18px; padding: 12px; text-align: left;
+      border: 1px solid #334155; border-radius: 10px; background: #131e30; color: #7dd3fc; font: inherit; font-size: 12px; cursor: pointer; }
+    .periodic-open:focus-visible { outline: 2px solid #7dd3fc; }
+    @media (max-width: 420px) {
+      .inventory-elements { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    .periodic-scroll:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -2px; }
+    .periodic-grid { display: grid; min-width: 480px; grid-template-columns: repeat(18, minmax(0, 1fr));
+      grid-template-rows: 14px repeat(7, 36px) 10px repeat(2, 36px); gap: 2px; }
+    .periodic-group { color: #64748b; font-size: 8px; text-align: center; }
+    .periodic-element { display: flex; position: relative; flex-direction: column; justify-content: center;
+      align-items: center; min-width: 0; border: 1px solid #263349; border-radius: 3px;
+      background: #131e30; color: #728197; line-height: 1; }
+    .periodic-number { position: absolute; top: 2px; left: 2px; font-size: 7px; }
+    .periodic-symbol { font-size: 12px; font-weight: 800; }
+    .periodic-element.in-game { border-color: #7dd3fc; background: #153447; color: #f0f9ff;
+      box-shadow: inset 0 0 0 1px rgba(125,211,252,0.2); }
+    .periodic-element.in-game .periodic-symbol { margin-top: 5px; }
+    .periodic-stock { font-size: 9px; margin-top: 3px; color: #a5f3fc; }
+    .periodic-series { color: #94a3b8; font-size: 9px; align-self: center; text-align: center; }
+    .periodic-source { display: block; color: #7dd3fc; font-size: 10px; margin-bottom: 16px; }
     .codex-intro { margin: 8px 0 14px; color: #cbd5e1; font-size: 13px; line-height: 1.6; }
     .codex-intro p + p { margin-top: 6px; }
     .codex-card { margin-bottom: 8px; background: #131e33; border: 1px solid #334155; border-radius: 13px; }
-    .codex-card[open] { border-color: #387690; }
-    .codex-card summary { list-style: none; cursor: pointer; padding: 7px 10px;
+    .codex-trigger { width: 100%; color: inherit; font: inherit; text-align: left; cursor: pointer; padding: 7px 10px;
       display: grid; grid-template-columns: 64px minmax(0, 1fr) auto;
       gap: 9px; align-items: center; border-radius: 12px; }
-    .codex-card summary::-webkit-details-marker { display: none; }
-    .codex-card summary:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -2px; }
+    .codex-trigger:hover { border-color: #387690; }
+    .codex-trigger:focus-visible { outline: 2px solid #7dd3fc; outline-offset: -2px; }
     .codex-icon { display: grid; place-items: center; width: 64px; height: 64px;
       background: #1c2a41; border-radius: 9px; }
     .codex-icon img { display: block; width: 56px; height: 56px; image-rendering: pixelated; }
@@ -127,7 +170,6 @@
     .codex-side { display: grid; justify-items: end; gap: 3px; color: #cbd5e1; font-size: 11px; white-space: nowrap; }
     .codex-side .collected { color: #86efac; }
     .codex-chevron { color: #7dd3fc; line-height: 1; }
-    .codex-card[open] .codex-chevron { transform: rotate(180deg); }
     .codex-body { padding: 2px 12px 12px; color: #e2e8f0; font-size: 14px; line-height: 1.55; }
     .codex-body p + p { margin-top: 7px; }
     .codex-atoms { display: flex; flex-wrap: wrap; gap: 5px; margin: 5px 0 9px; }
@@ -136,10 +178,30 @@
     .codex-skill { border-top: 1px solid #334155; margin-top: 9px; padding-top: 7px; color: #cbd5e1; }
     .codex-source { display: inline-block; margin-top: 7px; color: #7dd3fc; font-size: 12px; }
     @media (max-width: 370px) {
-      .codex-card summary { grid-template-columns: 50px minmax(0, 1fr) auto; gap: 6px; padding-inline: 6px; }
+      .codex-trigger { grid-template-columns: 50px minmax(0, 1fr) auto; gap: 6px; padding-inline: 6px; }
       .codex-icon { width: 50px; height: 50px; }
       .codex-icon img { width: 48px; height: 48px; }
     }
+    .detail-dialog { margin: auto; width: min(560px, calc(100% - 24px)); max-height: 90dvh; padding: 0;
+      border: 1px solid #40516b; border-radius: 18px; color: #f8fafc; background: #0f172a; overflow: hidden; }
+    .detail-dialog[open] { display: flex; flex-direction: column; }
+    .detail-dialog::backdrop { background: rgba(2,6,23,0.7); }
+    .detail-header { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between;
+      gap: 12px; padding: 16px 20px; border-bottom: 1px solid #24334b; }
+    .detail-header h2 { font-size: 20px; }
+    .detail-header button { min-width: 44px; min-height: 44px; padding: 4px; font-size: 24px; }
+    .detail-content { min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 20px; }
+    .detail-content .codex-body { padding: 0; }
+    .detail-hero { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    .detail-hero img { width: 80px; height: 80px; image-rendering: pixelated; }
+    .detail-footer { flex-shrink: 0; padding: 12px 20px; border-top: 1px solid #24334b; }
+    .detail-footer button { width: 100%; min-height: 44px; }
+    .detail-dialog.periodic-view { width: min(1080px, calc(100% - 24px)); }
+    .periodic-view .periodic-grid { min-width: 720px;
+      grid-template-rows: 18px repeat(7, 48px) 12px repeat(2, 48px); }
+    .periodic-view .periodic-symbol { font-size: 18px; }
+    .periodic-view .periodic-number { font-size: 10px; }
+    .periodic-view .periodic-stock { font-size: 12px; }
     .synth-btn { padding: 8px 16px; border-radius: 10px; border: none; background: #059669; color: #fff;
       font-weight: 700; font-size: 13px; }
     .synth-btn:disabled { background: #334155; color: #64748b; }
@@ -152,6 +214,13 @@
     .title-screen .sub-btn { padding: 10px 24px; border-radius: 10px; border: 1px solid #334155;
       background: #1e293b; color: #94a3b8; font-size: 14px; font-weight: 700; }
     .title-screen { position: relative; isolation: isolate; min-height: 100dvh; height: auto; }
+    .title-back { position: absolute; top: max(16px, env(safe-area-inset-top));
+      left: max(16px, env(safe-area-inset-left)); z-index: 1; display: inline-flex;
+      align-items: center; min-height: 44px; padding: 10px 16px; border-radius: 12px;
+      border: 1px solid rgba(125,211,252,0.45); background: rgba(8,27,39,0.85);
+      color: #e0f2fe; text-decoration: none; font-size: 15px; font-weight: 700; }
+    .title-back:hover { background: #164e63; }
+    .title-back:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
     .title-screen::before, .title-screen::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
     .title-screen::before { background: #09242d url('./assets/chem-arpg/title-adventure-desktop.png') center / cover no-repeat; }
     .title-screen::after { background: linear-gradient(180deg, rgba(2,10,20,0.12), rgba(2,10,20,0.08) 55%, rgba(2,10,20,0.55)); }
@@ -172,7 +241,7 @@
     .title-content button:hover { filter: brightness(1.15); }
     .title-content button:focus-visible { outline: 3px solid #fde68a; outline-offset: 4px; }
     @media (max-width: 759px) {
-      .title-screen { justify-content: flex-start; padding: clamp(24px, 7dvh, 58px) 18px 24px; }
+      .title-screen { justify-content: flex-start; padding: calc(80px + env(safe-area-inset-top)) 18px 24px; }
       .title-screen::before { background-image: url('./assets/chem-arpg/title-adventure-mobile.png'); background-position: center; }
       .title-content { gap: 14px; padding: 26px 22px; border-radius: 24px; }
       .title-screen h1 { font-size: clamp(36px, 9vw, 46px); }
@@ -196,6 +265,7 @@
 <div id="app">
   <!-- Title Screen -->
   <div class="title-screen" id="title-screen">
+    <a class="title-back" href="./index.html">← 回大廳</a>
     <div class="title-content">
     <span class="title-kicker">收集 · 合成 · 探索</span>
     <h1>元素獵人</h1>
@@ -277,13 +347,23 @@
       <button class="tab-btn" data-tab="status">狀態</button>
       <button class="tab-btn" data-tab="help">操作</button>
     </div>
+    <div class="menu-content">
     <div id="tab-inv"></div>
     <div id="tab-codex" style="display:none"></div>
     <div id="tab-status" style="display:none"></div>
     <div id="tab-help" style="display:none"></div>
+    </div>
     <button class="menu-btn" id="btn-close-menu" style="width:100%;margin-top:12px;">關閉</button>
   </div>
 </div>
+<dialog class="detail-dialog" id="detail-dialog" aria-labelledby="detail-title">
+  <header class="detail-header">
+    <h2 id="detail-title"></h2>
+    <button type="button" class="menu-btn" data-close-detail aria-label="關閉詳細資料">×</button>
+  </header>
+  <div class="detail-content" id="detail-body"></div>
+  <footer class="detail-footer"><button type="button" class="menu-btn" data-close-detail id="detail-return">返回</button></footer>
+</dialog>
 <!-- Death Modal -->
 <div class="modal" id="death-modal">
   <div class="modal-card" style="text-align:center;">
@@ -689,6 +769,8 @@
   const heroWalkArt = loadArt('hero-walk.png', 120, 4, 4);
   const heroHurtArt = loadArt('hero-hurt.png', 120, 4, 1);
   const combatArt = loadArt('combat.png', 48, 4, 3);
+  const monsterAtlas = new Image();
+  monsterAtlas.src = 'assets/chem-arpg/monsters.png';
 
   function drawArt(art, frame, x, y, w, h) {
     const { img, cell, cols, rows } = art;
@@ -837,12 +919,8 @@
           const m = room.monsters[j];
           const dx = m.x - p.x, dy = m.y - p.y;
           if (Math.sqrt(dx * dx + dy * dy) < 0.6) {
-            m.hp -= p.dmg;
+            hitMonster(m, p.dmg, p.vx, p.vy, p.element.fx === 'knockback' ? 2 : 0.28);
             // Special effects
-            if (p.element.fx === 'knockback') {
-              const kd = Math.sqrt(dx * dx + dy * dy) || 1;
-              m.x += (dx / kd) * 2; m.y += (dy / kd) * 2;
-            }
             if (p.element.fx === 'dot') m.dotTimer = 3;
             if (m.hp <= 0) killMonster(room, j);
             else playTone(400, 'triangle', 0.04);
@@ -914,6 +992,70 @@
     });
   }
 
+  // === MONSTER HIT ===
+  function hitMonster(monster, damage, dx, dy, distance = 0.28) {
+    monster.hp -= damage;
+    monster.hitFlash = 0.12;
+    monster.hitStun = monster.type === 'boss' ? 0.06 : 0.12;
+    let length = Math.hypot(dx, dy);
+    if (length < 0.0001) {
+      const facing = {up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[player.dir];
+      [dx,dy] = facing; length = 1;
+    }
+    monster.hitPush = { x:dx / length, y:dy / length,
+      distance:distance * (monster.type === 'boss' ? 0.35 : 1), time:0.12 };
+  }
+  function updateMonsterImpact(monster, dt) {
+    monster.hitFlash = Math.max(0, (monster.hitFlash || 0) - dt);
+    const stunned = (monster.hitStun || 0) > 0;
+    monster.hitStun = Math.max(0, (monster.hitStun || 0) - dt);
+    const push = monster.hitPush;
+    if (push) {
+      const distance = push.distance * Math.min(1, dt / push.time);
+      push.distance -= distance;
+      push.time = Math.max(0, push.time - dt);
+      const steps = Math.max(1, Math.ceil(distance / 0.08));
+      for (let i = 0; i < steps; i++) {
+        const dx = push.x * distance / steps, dy = push.y * distance / steps;
+        const nx = monster.x + dx, ny = monster.y + dy;
+        if (dx && !isSolid(Math.floor(nx + Math.sign(dx) * 0.3), Math.floor(monster.y - 0.3)) &&
+          !isSolid(Math.floor(nx + Math.sign(dx) * 0.3), Math.floor(monster.y + 0.3))) monster.x = nx;
+        if (dy && !isSolid(Math.floor(monster.x - 0.3), Math.floor(ny + Math.sign(dy) * 0.3)) &&
+          !isSolid(Math.floor(monster.x + 0.3), Math.floor(ny + Math.sign(dy) * 0.3))) monster.y = ny;
+      }
+      if (!push.time) monster.hitPush = null;
+    }
+    return stunned;
+  }
+
+  // === MONSTER ART ===
+  const MONSTER_FRAMES = Object.freeze({H:0, O:1, C:2, Na:3, Cl:4, Ca:5});
+  function monsterSpriteFrame(monster) {
+    if (monster.type === 'boss') return 7;
+    if (monster.type === 'molecular') return 6;
+    return MONSTER_FRAMES[monster.element.sym] ?? -1;
+  }
+  function drawMonsterSprite(monster, px, py, radius) {
+    const frame = monsterSpriteFrame(monster);
+    if (frame < 0 || !monsterAtlas.naturalWidth || !monsterAtlas.naturalHeight) return false;
+    const cellW = monsterAtlas.naturalWidth / 4, cellH = monsterAtlas.naturalHeight / 2;
+    const size = radius * 2.65;
+    const bob = monster.frozen > 0 ? 0 : Math.sin(Date.now() / 170 + monster.x * 2 + monster.y) * radius * 0.06;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    if (monster.frozen > 0) ctx.globalAlpha *= 0.75;
+    ctx.drawImage(monsterAtlas, (frame % 4) * cellW, Math.floor(frame / 4) * cellH, cellW, cellH,
+      Math.round(px - size / 2), Math.round(py - size * 0.62 + bob), Math.round(size), Math.round(size));
+    if (monster.hitFlash > 0) {
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha *= 0.8;
+      ctx.drawImage(monsterAtlas, (frame % 4) * cellW, Math.floor(frame / 4) * cellH, cellW, cellH,
+        Math.round(px - size / 2), Math.round(py - size * 0.62 + bob), Math.round(size), Math.round(size));
+    }
+    ctx.restore();
+    return true;
+  }
+
   // === MONSTERS ===
   function spawnMonsters(room, mx, my) {
     if (room.type === 'start') return;
@@ -952,6 +1094,7 @@
     const room = rooms[state.mapY][state.mapX];
     for (let i = room.monsters.length - 1; i >= 0; i--) {
       const m = room.monsters[i];
+      const stunned = updateMonsterImpact(m, dt);
       // DoT
       if (m.dotTimer > 0) {
         m.dotTimer -= dt;
@@ -960,6 +1103,7 @@
       }
       // Frozen
       if (m.frozen > 0) { m.frozen -= dt; continue; }
+      if (stunned) continue;
       // Chase player
       const dx = player.x - m.x;
       const dy = player.y - m.y;
@@ -998,7 +1142,9 @@
       // Shadow
       ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath(); ctx.ellipse(px, py + radius * 0.6, radius * 0.7, radius * 0.2, 0, 0, Math.PI * 2); ctx.fill();
-      // Body
+      // Element-specific creatures; retain basic bodies if art is unavailable.
+      const hasSprite = drawMonsterSprite(m, px, py, radius);
+      if (!hasSprite) {
       ctx.fillStyle = m.frozen > 0 ? '#93c5fd' : m.element.color;
       if (m.type === 'boss') {
         ctx.fillRect(px - radius, py - radius, radius * 2, radius * 2);
@@ -1012,17 +1158,29 @@
         ctx.lineWidth = 1.5;
         ctx.stroke();
       }
-      // Symbol
+      }
+      if (hasSprite && (m.type === 'boss' || m.frozen > 0)) {
+        ctx.strokeStyle = m.frozen > 0 ? '#a5f3fc' : '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(px, py + radius * 0.65, radius, radius * 0.3, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      // Keep labels sharp and correct instead of baking letters into generated art.
+      const label = m.type === 'molecular' && m.recipe ? m.recipe.formula : m.element.sym;
+      ctx.font = `bold ${Math.max(10, Math.min(m.type === 'boss' ? 22 : 18, radius * 0.65))}px sans-serif`;
+      const labelY = hasSprite ? py + radius * 0.45 : py;
+      const labelW = ctx.measureText(label).width + 10;
+      const labelH = Math.max(16, radius * 0.85);
+      ctx.fillStyle = 'rgba(7,18,30,0.85)';
+      ctx.fillRect(px - labelW / 2, labelY - labelH / 2, labelW, labelH);
       ctx.fillStyle = '#fff';
-      ctx.font = `bold ${radius * 0.9}px sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(m.element.sym, px, py);
+      ctx.fillText(label, px, labelY);
       // HP bar
       if (m.hp < m.maxHp) {
         const barW = radius * 2;
         const barH = 4;
         const barX = px - radius;
-        const barY = py - radius - 8;
+        const barY = py - radius * (hasSprite ? 1.65 : 1) - 8;
         ctx.fillStyle = '#1e293b'; ctx.fillRect(barX, barY, barW, barH);
         ctx.fillStyle = '#ef4444'; ctx.fillRect(barX, barY, barW * (m.hp / m.maxHp), barH);
       }
@@ -1111,7 +1269,7 @@
       while (diff > Math.PI) diff -= Math.PI * 2;
       while (diff < -Math.PI) diff += Math.PI * 2;
       if (Math.abs(diff) < 0.8) {
-        m.hp -= player.atk;
+        hitMonster(m, player.atk, dx, dy);
         if (m.hp <= 0) killMonster(room, i);
         else playTone(400, 'triangle', 0.04);
       }
@@ -1396,7 +1554,7 @@
         const dmg = player.atk * 3;
         room.monsters.forEach(m => {
           const dist = Math.sqrt((m.x - player.x) ** 2 + (m.y - player.y) ** 2);
-          if (dist < 3) m.hp -= dmg;
+          if (dist < 3) hitMonster(m, dmg, m.x - player.x, m.y - player.y);
         });
         for (let i = room.monsters.length - 1; i >= 0; i--) {
           if (room.monsters[i].hp <= 0) killMonster(room, i);
@@ -1420,7 +1578,7 @@
         const dmg2 = player.atk * 5;
         room.monsters.forEach(m => {
           const dist = Math.sqrt((m.x - player.x) ** 2 + (m.y - player.y) ** 2);
-          if (dist < 5) m.hp -= dmg2;
+          if (dist < 5) hitMonster(m, dmg2, m.x - player.x, m.y - player.y);
         });
         for (let i = room.monsters.length - 1; i >= 0; i--) {
           if (room.monsters[i].hp <= 0) killMonster(room, i);
@@ -1581,7 +1739,6 @@
     state.paused = true;
     const modal = document.getElementById('menu-modal');
     modal.classList.add('open');
-    modal.classList.toggle('codex-view', tab === 'codex');
     document.querySelectorAll('.tab-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
@@ -1592,24 +1749,71 @@
     else if (tab === 'codex') renderCodexTab();
     else if (tab === 'status') renderStatusTab();
     else if (tab === 'help') renderHelpTab();
+    modal.querySelector('.menu-content').scrollTop = 0;
   }
 
   function closeMenu() {
+    const detail = document.getElementById('detail-dialog');
+    if (detail.open) detail.close();
     state.paused = false;
     document.getElementById('menu-modal').classList.remove('open');
   }
 
+  // === PERIODIC INVENTORY ===
+  // Atomic numbers/symbols: https://pubchem.ncbi.nlm.nih.gov/rest/pug/periodictable/JSON
+  // 18-column layout and separated series: IUPAC periodic table, 4 May 2022.
+  const PERIODIC_SYMBOLS = ('H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn ' +
+    'Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu ' +
+    'Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og').split(' ');
+  const PERIODIC_ELEMENTS = [];
+  for (const [start, end, row, col] of [
+    [1,1,1,1], [2,2,1,18], [3,4,2,1], [5,10,2,13], [11,12,3,1], [13,18,3,13],
+    [19,36,4,1], [37,54,5,1], [55,56,6,1], [72,86,6,4], [87,88,7,1], [104,118,7,4],
+    [57,71,9,3], [89,103,10,3],
+  ]) {
+    for (let number = start; number <= end; number++) {
+      PERIODIC_ELEMENTS.push({ number, symbol: PERIODIC_SYMBOLS[number - 1], row, col: col + number - start });
+    }
+  }
+
+  function renderPeriodicInventory() {
+    let markup = '<p class="periodic-legend"><strong>亮框：已納入遊戲的 ' + ELEMENTS.length + ' 種元素</strong>｜灰色：尚未納入<br>' +
+      '左上角為原子序，×數字為庫存。手機可左右滑動查看整張表。</p>' +
+      '<div class="periodic-scroll" tabindex="0" role="region" aria-label="元素週期表，可左右捲動">' +
+      '<div class="periodic-grid" role="list" aria-label="118 種元素">';
+    for (let col = 1; col <= 18; col++) {
+      markup += `<span class="periodic-group" style="grid-column:${col};grid-row:1" aria-hidden="true">${col}</span>`;
+    }
+    for (const element of PERIODIC_ELEMENTS) {
+      const gameElement = ELEMENTS.find(e => e.sym === element.symbol);
+      const stock = inventory[element.symbol] || 0;
+      const label = `${element.symbol}${gameElement ? ' ' + gameElement.name : ''}，原子序 ${element.number}，` +
+        (gameElement ? `已納入遊戲，庫存 ${stock}` : '尚未納入遊戲');
+      markup += `<div class="periodic-element${gameElement ? ' in-game' : ''}" data-element="${element.symbol}" role="listitem" ` +
+        `aria-label="${label}" title="${label}" style="grid-column:${element.col};grid-row:${element.row + 1}">` +
+        `<span class="periodic-number" aria-hidden="true">${element.number}</span><span class="periodic-symbol" aria-hidden="true">${element.symbol}</span>` +
+        (gameElement ? `<span class="periodic-stock" aria-hidden="true">×${stock}</span>` : '') + '</div>';
+    }
+    markup += '<span class="periodic-series" style="grid-column:3;grid-row:7" aria-hidden="true">57–71</span>' +
+      '<span class="periodic-series" style="grid-column:3;grid-row:8" aria-hidden="true">89–103</span>' +
+      '<span class="periodic-series" style="grid-column:1 / 3;grid-row:10" aria-hidden="true">鑭系</span>' +
+      '<span class="periodic-series" style="grid-column:1 / 3;grid-row:11" aria-hidden="true">錒系</span>' +
+      '</div></div><a class="periodic-source" href="https://iupac.org/what-we-do/periodic-table-of-elements/" ' +
+      'target="_blank" rel="noopener noreferrer">元素排列參考：IUPAC 元素週期表 ↗</a>';
+    return markup;
+  }
+
+  // === INVENTORY TAB ===
   function renderInventoryTab() {
     const el = document.getElementById('tab-inv');
     let html = '<h3 style="margin-bottom:10px;">元素庫存</h3>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">';
-    ELEMENTS.forEach(e => {
-      html += `<div style="padding:8px 14px;background:#1e293b;border-radius:10px;text-align:center;">` +
-        `<div style="color:${e.color};font-size:20px;font-weight:800;">${e.sym}</div>` +
-        `<div style="color:#94a3b8;font-size:12px;">${e.name}</div>` +
-        `<div style="color:#f8fafc;font-weight:700;">${inventory[e.sym] || 0}</div></div>`;
-    });
-    html += '</div><h3 style="margin-bottom:10px;">合成配方</h3>';
+    html += '<div class="inventory-elements">' + ELEMENTS.map(e =>
+      `<div class="inventory-element" style="--element-color:${e.color}">` +
+      `<div class="inventory-symbol">${e.sym}</div><div class="inventory-name">${e.name}</div>` +
+      `<div class="inventory-count">${inventory[e.sym] || 0}</div></div>`).join('') + '</div>';
+    html += `<button type="button" class="periodic-open" data-open-periodic aria-haspopup="dialog" aria-controls="detail-dialog">` +
+      `查看完整週期表 ↗ · 已納入 ${ELEMENTS.length} / 118 種元素</button>`;
+    html += '<h3 style="margin-bottom:10px;">合成配方</h3>';
     RECIPES.forEach(r => {
       const reqStr = Object.entries(r.req).map(([k, v]) => `${k}×${v}`).join(' + ');
       const canSynth = Object.entries(r.req).every(([sym, count]) => (inventory[sym] || 0) >= count);
@@ -1623,31 +1827,49 @@
 
   function renderCodexTab() {
     const el = document.getElementById('tab-codex');
-    const opened = new Set(Array.from(el.querySelectorAll('details[open]'), card => card.dataset.recipe));
     let html = '<h3>化學圖鑑</h3><div class="codex-intro">' +
       '<p>點開卡片，看看化學式藏在哪些生活用品裡。知識可以先讀，遊戲技能要合成才會解鎖。</p>' +
       '<p>化學式右下的小數字表示原子個數或比例，沒寫數字就是 1。遊戲合成不是現實的製作方法。</p></div>';
     RECIPES.forEach(r => {
       const info = COMPOUND_INFO[r.id];
       const unlocked = codex.includes(r.id);
-      const heading = info.type === '分子' ? '每個分子的組成' : '元素的最簡比例';
-      const atoms = Object.entries(r.req).map(([sym, count]) =>
-        `<span>${ELEMENTS.find(e => e.sym === sym).name} ${sym} × ${count}</span>`).join('');
-      html += `<details class="codex-card" data-recipe="${r.id}"${opened.has(r.id) ? ' open' : ''}><summary>` +
+      html += `<button type="button" class="codex-card codex-trigger" data-recipe="${r.id}" aria-haspopup="dialog" aria-controls="detail-dialog">` +
         `<span class="codex-icon"><img src="assets/chem-arpg/codex/${r.id.toLowerCase()}.png" width="56" height="56" alt=""></span>` +
         `<span class="codex-main"><strong class="codex-formula">${r.formula}</strong><strong>${info.name}</strong>` +
         `<span class="codex-example">${info.example}</span></span><span class="codex-side">` +
         `<span class="${unlocked ? 'collected' : ''}">${unlocked ? '已收集' : '待合成'}</span>` +
-        '<span class="codex-chevron" aria-hidden="true">▾</span></span></summary>' +
-        `<div class="codex-body"><p><strong>${heading}：</strong></p><div class="codex-atoms">${atoms}</div>` +
-        `<p><strong>生活中的化學：</strong>${info.fact}</p>` +
-        (info.note ? `<p class="codex-note">${info.note}</p>` : '') +
-        `<p class="codex-skill"><strong>遊戲技能：</strong>${unlocked ? r.name + '。' + r.desc : '首次合成後解鎖。'}</p>` +
-        `<a class="codex-source" href="${info.source}" target="_blank" rel="noopener noreferrer">來源（英文）：${info.agency}</a>` +
-        (info.extraSource ? ` <a class="codex-source" href="${info.extraSource}" target="_blank" rel="noopener noreferrer">${info.extraAgency}</a>` : '') +
-        '</div></details>';
+        '<span class="codex-chevron" aria-hidden="true">→</span></span></button>';
     });
     el.innerHTML = html;
+  }
+
+  function showDetail(title, markup, periodic, returnLabel) {
+    const dialog = document.getElementById('detail-dialog');
+    document.getElementById('detail-title').textContent = title;
+    document.getElementById('detail-body').innerHTML = markup;
+    document.getElementById('detail-return').textContent = returnLabel;
+    dialog.classList.toggle('periodic-view', periodic);
+    dialog.showModal();
+    document.getElementById('detail-body').scrollTop = 0;
+  }
+
+  function openCodexDetail(id) {
+    const r = RECIPES.find(recipe => recipe.id === id);
+    if (!r) return;
+    const info = COMPOUND_INFO[id];
+    const unlocked = codex.includes(id);
+    const heading = info.type === '分子' ? '每個分子的組成' : '元素的最簡比例';
+    const atoms = Object.entries(r.req).map(([sym, count]) =>
+      `<span>${ELEMENTS.find(e => e.sym === sym).name} ${sym} × ${count}</span>`).join('');
+    const markup = `<div class="detail-hero"><img src="assets/chem-arpg/codex/${id.toLowerCase()}.png" alt="">` +
+      `<div><strong class="codex-formula">${r.formula}</strong><p>${info.example}</p></div></div>` +
+      `<div class="codex-body"><p><strong>${heading}：</strong></p><div class="codex-atoms">${atoms}</div>` +
+      `<p><strong>生活中的化學：</strong>${info.fact}</p>` +
+      (info.note ? `<p class="codex-note">${info.note}</p>` : '') +
+      `<p class="codex-skill"><strong>遊戲技能：</strong>${unlocked ? r.name + '。' + r.desc : '首次合成後解鎖。'}</p>` +
+      `<a class="codex-source" href="${info.source}" target="_blank" rel="noopener noreferrer">來源（英文）：${info.agency}</a>` +
+      (info.extraSource ? ` <a class="codex-source" href="${info.extraSource}" target="_blank" rel="noopener noreferrer">${info.extraAgency}</a>` : '') + '</div>';
+    showDetail(info.name, markup, false, '返回圖鑑');
   }
 
   function renderStatusTab() {
@@ -1708,16 +1930,39 @@
   }
 
   // === MENU BUTTON HANDLERS ===
+  const detailDialog = document.getElementById('detail-dialog');
+  document.querySelectorAll('[data-close-detail]').forEach(button => {
+    button.addEventListener('click', () => detailDialog.close());
+  });
+  detailDialog.addEventListener('click', (event) => {
+    if (event.target !== detailDialog) return;
+    const rect = detailDialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) detailDialog.close();
+  });
+  document.getElementById('tab-codex').addEventListener('click', (event) => {
+    const card = event.target.closest('[data-recipe]');
+    if (card) openCodexDetail(card.dataset.recipe);
+  });
+  document.getElementById('tab-inv').addEventListener('click', (event) => {
+    if (event.target.closest('[data-open-periodic]')) showDetail('元素週期表', renderPeriodicInventory(), true, '返回背包');
+  });
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => openMenu(btn.dataset.tab));
   });
   document.getElementById('btn-menu').addEventListener('click', () => openMenu());
   document.getElementById('btn-close-menu').addEventListener('click', closeMenu);
+  document.getElementById('menu-modal').addEventListener('click', (event) => {
+    if (event.target === event.currentTarget) closeMenu();
+  });
   document.getElementById('btn-title-codex').addEventListener('click', () => openMenu('codex'));
   document.getElementById('btn-title-status').addEventListener('click', () => openMenu('status'));
 
   // === MENU KEYBOARD SHORTCUTS ===
   window.addEventListener('keydown', (e) => {
+    if (detailDialog.open) {
+      if (e.key === 'Escape') { e.preventDefault(); detailDialog.close(); }
+      return;
+    }
     if (e.key === 'i' || e.key === 'I' || e.key === 'Tab') {
       e.preventDefault();
       if (document.getElementById('menu-modal').classList.contains('open')) closeMenu();

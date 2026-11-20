@@ -26,3 +26,12 @@ test('只有完整必要的 Web config 才能連線', () => {
   assert.equal(hasFirebaseConfig({apiKey:'x',authDomain:'x',projectId:'x',appId:'x'}),false);
   assert.equal(hasFirebaseConfig({apiKey:'x',authDomain:'x',projectId:'x',appId:'x',databaseURL:'https://example.firebaseio.com'}),true);
 });
+
+test('分頁游標使用最舊一筆的時間與 ID，即便 20 筆時間相同', async () => {
+  const { feedbackPage, FEEDBACK_PAGE_SIZE } = await import('../js/feedback-data.mjs');
+  const rows = Array.from({ length: FEEDBACK_PAGE_SIZE }, (_, i) =>
+    ({ createdAt: 1000, id: 't' + String(i).padStart(2, '0') }));
+  assert.deepEqual(feedbackPage(rows).before, { createdAt: 1000, id: 't00' });
+  assert.equal(feedbackPage(rows.slice(1)).before, null);
+  assert.equal(feedbackPage([]).before, null);
+});

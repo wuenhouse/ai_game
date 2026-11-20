@@ -16,13 +16,18 @@
       display: flex; flex-direction: column; height: 100dvh; max-width: 500px; margin: 0 auto;
     }
     .header {
-      padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); display: flex; justify-content: space-between; align-items: center;
       background: #0f172a; border-bottom: 1px solid #1e293b;
     }
     .back-link {
-      color: #c084fc; text-decoration: none; font-size: 13px; font-weight: 700;
-      padding: 6px 10px; border-radius: 8px; background: rgba(168, 85, 247, 0.15);
+      display: inline-flex; align-items: center; flex-shrink: 0;
+      min-height: 44px; padding: 10px 16px; border-radius: 12px;
+      border: 1px solid rgba(125,211,252,0.45); background: rgba(8,27,39,0.85);
+      color: #e0f2fe; text-decoration: none; font-size: 15px; font-weight: 700;
     }
+    .back-link:hover { background: #164e63; }
+    .back-link:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
+
     .hud { display: flex; gap: 12px; font-size: 13px; font-weight: 700; }
     .hud span { color: #38bdf8; font-size: 15px; }
     .guide-btn {
@@ -87,7 +92,7 @@
 <body>
 <div id="app">
   <div class="header">
-    <a href="./index.html" class="back-link">← 大廳</a>
+    <a href="./index.html" class="back-link">← 回大廳</a>
     <div class="hud">
       <div>分數 <span id="score">0</span></div>
       <div>消行 <span id="lines">0</span></div>

@@ -1,5 +1,6 @@
 import json, re, urllib.request, urllib.error, time
 from pathlib import Path
+from urllib.parse import urlencode
 """手動雲端驗收：會建立匿名帳號及保留 rules-check-* 測試資料，不使用管理員權限。"""
 config=(Path(__file__).resolve().parents[1]/'js/firebase-config.js').read_text()
 key=re.search(r"apiKey: '([^']+)'",config)[1]
@@ -48,9 +49,27 @@ for game in ['chemistry_arpg','chemistry_rubiks_cube','chemistry_tetris']:
         value=' \t\n　\u00a0' if field=='author' else blank
         for section in ['threads/'+thread+'-blank-', 'replies/'+thread+'-game/blank-']:
             test('拒絕混合空白 '+game+' '+field+' '+section,path+section+field,payload(**{field:value}),401)
-for game in ['chemistry_arpg','chemistry_rubiks_cube','chemistry_tetris']:
-    status,_=request(base+'/feedback/'+game+'/threads.json')
-    checks.append({'name':'公開讀取 '+game,'pass':status==200,'status':status})
+def check_read(name, path, expected, **query):
+    url = base + '/' + path + '.json'
+    if query:
+        url += '?' + urlencode(query)
+    status, _ = request(url)
+    checks.append({'name': name, 'pass': status == expected, 'status': status})
+
+page = {'orderBy': '"createdAt"', 'limitToLast': 20}
+check_read('拒絕整個留言區讀取', 'feedback', 401)
+for game in ['chemistry_arpg', 'chemistry_rubiks_cube', 'chemistry_tetris']:
+    game_path = 'feedback/' + game
+    check_read('拒絕整個遊戲讀取 ' + game, game_path, 401)
+    check_read('拒絕整批回覆讀取 ' + game, game_path + '/replies', 401)
+    check_read('公開分頁主題 ' + game, game_path + '/threads', 200, **page)
+    check_read('拒絕無界主題 ' + game, game_path + '/threads', 401)
+    check_read('拒絕超過上限 ' + game, game_path + '/threads', 401, orderBy='"createdAt"', limitToLast=21)
+    reply_path = game_path + '/replies/' + thread + '-game'
+    check_read('公開分頁回覆 ' + game, reply_path, 200, **page)
+    check_read('拒絕無界回覆 ' + game, reply_path, 401)
+check_read('公開發文狀態', 'feedbackSettings/postingEnabled', 200)
+check_read('拒絕全部設定讀取', 'feedbackSettings', 401)
 Path('/private/tmp/firebase-rules-check-result.json').write_text(json.dumps(checks,ensure_ascii=False,indent=2))
 print('RESULT',sum(c['pass'] for c in checks),'/',len(checks))
 raise SystemExit(0 if all(c['pass'] for c in checks) else 1)

@@ -18,3 +18,14 @@ export function hasFirebaseConfig(config) {
   return !!config && ['apiKey', 'authDomain', 'projectId', 'appId', 'databaseURL']
     .every(key => typeof config[key] === 'string' && config[key].trim().length > 0);
 }
+
+export const FEEDBACK_PAGE_SIZE = 20;
+
+// RTDB snapshot.forEach already provides ascending (createdAt, id) order.
+export function feedbackPage(rows) {
+  const oldest = rows[0];
+  return {
+    rows,
+    before: rows.length === FEEDBACK_PAGE_SIZE ? { createdAt: oldest.createdAt, id: oldest.id } : null
+  };
+}
