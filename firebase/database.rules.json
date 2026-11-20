@@ -1,0 +1,65 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "feedback": {
+      "$game": {
+        ".read": "$game === 'chemistry_arpg' || $game === 'chemistry_rubiks_cube' || $game === 'chemistry_tetris'",
+        ".validate": "$game === 'chemistry_arpg' || $game === 'chemistry_rubiks_cube' || $game === 'chemistry_tetris'",
+        "threads": {
+          ".indexOn": [
+            "createdAt"
+          ],
+          "$thread": {
+            ".write": "auth != null && !data.exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['author', 'message', 'uid', 'createdAt'])",
+            "author": {
+              ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+            },
+            "message": {
+              ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+            },
+            "uid": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() === now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "replies": {
+          "$thread": {
+            ".indexOn": [
+              "createdAt"
+            ],
+            "$reply": {
+              ".write": "auth != null && !data.exists() && newData.exists() && root.child('feedback').child($game).child('threads').child($thread).exists()",
+              ".validate": "newData.hasChildren(['author', 'message', 'uid', 'createdAt'])",
+              "author": {
+                ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+              },
+              "message": {
+                ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+              },
+              "uid": {
+                ".validate": "newData.val() === auth.uid"
+              },
+              "createdAt": {
+                ".validate": "newData.isNumber() && newData.val() === now"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
