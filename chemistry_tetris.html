@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>化學俄羅斯方塊 | ChemTetris</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    html, body {
+      width: 100%; height: 100dvh; overflow: hidden;
+      background: #090d16; color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    }
+    #app {
+      display: flex; flex-direction: column; height: 100dvh; max-width: 500px; margin: 0 auto;
+    }
+    .header {
+      padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      background: #0f172a; border-bottom: 1px solid #1e293b;
+    }
+    .back-link {
+      color: #c084fc; text-decoration: none; font-size: 13px; font-weight: 700;
+      padding: 6px 10px; border-radius: 8px; background: rgba(168, 85, 247, 0.15);
+    }
+    .hud { display: flex; gap: 12px; font-size: 13px; font-weight: 700; }
+    .hud span { color: #38bdf8; font-size: 15px; }
+    .guide-btn {
+      padding: 6px 10px; border-radius: 8px; border: 1px solid #334155;
+      background: #1e293b; color: #fbbf24; font-size: 12px; font-weight: 700;
+    }
+    .stage {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      gap: 12px; padding: 8px; position: relative; overflow: hidden;
+    }
+    canvas#board {
+      background: #0f172a; border: 2px solid #334155; border-radius: 10px;
+      touch-action: none; box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+    }
+    .side-panel {
+      display: flex; flex-direction: column; gap: 12px; align-self: flex-start; padding-top: 8px;
+    }
+    .mini-box {
+      background: #0f172a; border: 1px solid #334155; border-radius: 10px;
+      padding: 6px; text-align: center;
+    }
+    .mini-label { font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 4px; }
+    #combo-banner {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(90deg, #9333ea, #ec4899); color: #fff;
+      padding: 6px 16px; border-radius: 999px; font-weight: 800; font-size: 14px;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s; white-space: nowrap;
+      box-shadow: 0 6px 18px rgba(236, 72, 153, 0.45);
+    }
+    #combo-banner.show { opacity: 1; }
+    .controls {
+      padding: 10px 12px calc(12px + env(safe-area-inset-bottom));
+      background: #0f172a; border-top: 1px solid #1e293b;
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    }
+    .pad-btn {
+      height: 54px; border-radius: 14px; border: 1px solid #334155;
+      background: #1e293b; color: #f8fafc; font-size: 18px; font-weight: 800;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      touch-action: manipulation;
+    }
+    .pad-btn span { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+    .pad-btn:active { background: #3b82f6; border-color: #60a5fa; }
+    .pad-btn.rot { background: #312e81; border-color: #6366f1; }
+    .pad-btn.drop { background: #581c87; border-color: #a855f7; }
+    /* Modal */
+    .modal {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); z-index: 50;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal.open { display: flex; }
+    .card {
+      background: #0f172a; border: 1px solid #334155; border-radius: 20px;
+      padding: 20px; width: 100%; max-width: 400px; max-height: 80dvh; overflow-y: auto;
+    }
+    .recipe-row {
+      display: flex; justify-content: space-between; padding: 8px 10px;
+      background: #1e293b; border-radius: 10px; margin-top: 8px; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <a href="./index.html" class="back-link">← 大廳</a>
+    <div class="hud">
+      <div>分數 <span id="score">0</span></div>
+      <div>消行 <span id="lines">0</span></div>
+    </div>
+    <button class="guide-btn" id="btn-guide">📖 圖鑑</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <div id="combo-banner">⚗️ 化學反應 H₂O +200!</div>
+    <canvas id="board"></canvas>
+    <div class="side-panel">
+      <div class="mini-box">
+        <div class="mini-label">NEXT</div>
+        <canvas id="next-canvas" width="64" height="64"></canvas>
+      </div>
+      <div class="mini-box">
+        <div class="mini-label">HOLD</div>
+        <canvas id="hold-canvas" width="64" height="64"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="pad-btn" id="btn-left">◀<span>左移</span></button>
+    <button class="pad-btn" id="btn-down">▼<span>加速</span></button>
+    <button class="pad-btn" id="btn-right">▶<span>右移</span></button>
+    <button class="pad-btn drop" id="btn-drop">⏬<span>直落</span></button>
+    <button class="pad-btn rot" id="btn-rot">↻<span>旋轉</span></button>
+  </div>
+</div>
+
+<!-- 圖鑑 Modal -->
+<div class="modal" id="guide-modal">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <h3>🧪 相鄰化學反應公式</h3>
+      <button class="guide-btn" id="btn-close-guide">關閉</button>
+    </div>
+    <p style="font-size:12px;color:#94a3b8;">方塊落地後，只要<strong>上下左右相鄰連通</strong>的原子符合以下配方，就會自動引爆消除並觸發上方重力連鎖！</p>
+    <div id="recipe-list"></div>
+  </div>
+</div>
+
+<!-- Game Over Modal -->
+<div class="modal" id="gameover-modal">
+  <div class="card" style="text-align:center;">
+    <h2 style="margin-bottom:8px;">💥 實驗室爆滿！</h2>
+    <p style="color:#94a3b8;margin-bottom:16px;">最終實驗分數：<strong id="final-score" style="color:#38bdf8;font-size:22px;">0</strong></p>
+    <button id="btn-restart" style="width:100%;padding:12px;border-radius:12px;border:none;background:#9333ea;color:#fff;font-weight:800;font-size:16px;">重新開始實驗</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const COLS = 10, ROWS = 20;
+  const ELEMENTS = [
+    { sym: 'H', color: '#0284c7' },
+    { sym: 'O', color: '#dc2626' },
+    { sym: 'C', color: '#475569' },
+    { sym: 'Na', color: '#7c3aed' },
+    { sym: 'Cl', color: '#059669' },
+    { sym: 'Ca', color: '#d97706' }
+  ];
+
+  const RECIPES = [
+    { name: '水 (H₂O)', req: { H: 2, O: 1 }, pts: 200 },
+    { name: '二氧化碳 (CO₂)', req: { C: 1, O: 2 }, pts: 220 },
+    { name: '氯化鈉 (NaCl)', req: { Na: 1, Cl: 1 }, pts: 150 },
+    { name: '氧化鈣 (CaO)', req: { Ca: 1, O: 1 }, pts: 150 },
+    { name: '氯化鈣 (CaCl₂)', req: { Ca: 1, Cl: 2 }, pts: 240 },
+    { name: '氫氧化鈉 (NaOH)', req: { Na: 1, O: 1, H: 1 }, pts: 280 },
+    { name: '碳酸鈣 (CaCO₃)', req: { Ca: 1, C: 1, O: 3 }, pts: 450 },
+    { name: '甲烷 (CH₄)', req: { C: 1, H: 4 }, pts: 380 }
+  ];
+
+  const listEl = document.getElementById('recipe-list');
+  RECIPES.forEach(r => {
+    const reqTxt = Object.entries(r.req).map(([k, v]) => `${k}×${v}`).join(' + ');
+    listEl.innerHTML += `<div class="recipe-row"><span><strong>${r.name}</strong> (${reqTxt})</span><span style="color:#fbbf24;font-weight:700;">+${r.pts}</span></div>`;
+  });
+
+  const SHAPES = [
+    [[1,1,1,1]],
+    [[1,1],[1,1]],
+    [[0,1,0],[1,1,1]],
+    [[1,0,0],[1,1,1]],
+    [[0,0,1],[1,1,1]],
+    [[0,1,1],[1,1,0]],
+    [[1,1,0],[0,1,1]]
+  ];
+
+  const boardCanvas = document.getElementById('board');
+  const ctx = boardCanvas.getContext('2d');
+  const nextCtx = document.getElementById('next-canvas').getContext('2d');
+  const holdCtx = document.getElementById('hold-canvas').getContext('2d');
+
+  let cellSize = 24;
+  function resizeBoard() {
+    const stage = document.getElementById('stage');
+    const maxH = stage.clientHeight - 16;
+    const maxW = stage.clientWidth - 96;
+    cellSize = Math.floor(Math.min(maxH / ROWS, maxW / COLS));
+    boardCanvas.width = cellSize * COLS;
+    boardCanvas.height = cellSize * ROWS;
+  }
+  resizeBoard();
+  window.addEventListener('resize', resizeBoard);
+
+  // Audio
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function beep(freq, dur = 0.07, type = 'sine') {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }
+
+  let grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  let score = 0, lines = 0, gameOver = false;
+  let current = null, nextPiece = null, holdPiece = null, canHold = true;
+
+  function createPiece() {
+    const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    const matrix = shape.map(row => row.map(v => v ? ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)] : null));
+    return { matrix, x: Math.floor((COLS - matrix[0].length) / 2), y: 0 };
+  }
+
+  function collide(piece, ox = 0, oy = 0, mat = piece.matrix) {
+    for (let r = 0; r < mat.length; r++) {
+      for (let c = 0; c < mat[r].length; c++) {
+        if (!mat[r][c]) continue;
+        const nx = piece.x + c + ox;
+        const ny = piece.y + r + oy;
+        if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+        if (ny >= 0 && grid[ny][nx]) return true;
+      }
+    }
+    return false;
+  }
+
+  function rotateMatrix(mat) {
+    const rows = mat.length, cols = mat[0].length;
+    const res = Array.from({ length: cols }, () => Array(rows).fill(null));
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        res[c][rows - 1 - r] = mat[r][c];
+      }
+    }
+    return res;
+  }
+
+  function showBanner(text) {
+    const b = document.getElementById('combo-banner');
+    b.textContent = text;
+    b.classList.add('show');
+    clearTimeout(b._t);
+    b._t = setTimeout(() => b.classList.remove('show'), 1800);
+  }
+
+  function lockPiece() {
+    for (let r = 0; r < current.matrix.length; r++) {
+      for (let c = 0; c < current.matrix[r].length; c++) {
+        const el = current.matrix[r][c];
+        if (!el) continue;
+        if (current.y + r < 0) {
+          endGame();
+          return;
+        }
+        grid[current.y + r][current.x + c] = el;
+      }
+    }
+    beep(220, 0.06, 'triangle');
+    resolveBoard(1);
+    spawnPiece();
+  }
+
+  // 消行 + 連通化學反應 + 重力連鎖
+  function resolveBoard(chain) {
+    let didClear = false;
+
+    // 1. 檢查橫排滿行
+    let clearedRows = 0;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (grid[r].every(cell => cell !== null)) {
+        grid.splice(r, 1);
+        grid.unshift(Array(COLS).fill(null));
+        clearedRows++;
+        r++;
+      }
+    }
+    if (clearedRows > 0) {
+      lines += clearedRows;
+      score += clearedRows * 100 * chain;
+      didClear = true;
+    }
+
+    // 2. BFS 尋找相鄰連通化學反應
+    const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    const toRemove = [];
+    const reactedNames = [];
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (!grid[r][c] || visited[r][c]) continue;
+        // 收集連通區塊
+        const comp = [];
+        const q = [[r, c]];
+        visited[r][c] = true;
+        while (q.length) {
+          const [cr, cc] = q.shift();
+          comp.push({ r: cr, c: cc, sym: grid[cr][cc].sym });
+          [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dr, dc]) => {
+            const nr = cr + dr, nc = cc + dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc] && !visited[nr][nc]) {
+              visited[nr][nc] = true;
+              q.push([nr, nc]);
+            }
+          });
+        }
+
+        // 檢查該連通區塊是否能匹配配方
+        for (const recipe of RECIPES) {
+          const needed = { ...recipe.req };
+          const picked = [];
+          for (const cell of comp) {
+            if (needed[cell.sym] > 0) {
+              needed[cell.sym]--;
+              picked.push(cell);
+            }
+          }
+          if (Object.values(needed).every(v => v === 0)) {
+            picked.forEach(p => toRemove.push(p));
+            score += recipe.pts * chain;
+            reactedNames.push(recipe.name);
+            break;
+          }
+        }
+      }
+    }
+
+    if (toRemove.length > 0) {
+      toRemove.forEach(p => { grid[p.r][p.c] = null; });
+      // 重力下落填補空缺
+      for (let c = 0; c < COLS; c++) {
+        let writeRow = ROWS - 1;
+        for (let r = ROWS - 1; r >= 0; r--) {
+          if (grid[r][c]) {
+            const temp = grid[r][c];
+            grid[r][c] = null;
+            grid[writeRow][c] = temp;
+            writeRow--;
+          }
+        }
+      }
+      didClear = true;
+      showBanner(`⚗️ ${reactedNames[0]} ${chain > 1 ? chain + 'x 連鎖！' : '反應成功！'}`);
+      beep(523.25 + chain * 110, 0.16);
+      if (navigator.vibrate) navigator.vibrate(35);
+    }
+
+    document.getElementById('score').textContent = score;
+    document.getElementById('lines').textContent = lines;
+
+    if (didClear) {
+      resolveBoard(chain + 1);
+    }
+  }
+
+  function spawnPiece() {
+    current = nextPiece || createPiece();
+    nextPiece = createPiece();
+    canHold = true;
+    drawMini(nextCtx, nextPiece);
+    drawMini(holdCtx, holdPiece);
+    if (collide(current)) endGame();
+  }
+
+  function holdCurrent() {
+    if (!canHold || gameOver) return;
+    canHold = false;
+    const temp = { matrix: current.matrix, x: 3, y: 0 };
+    if (!holdPiece) {
+      holdPiece = temp;
+      spawnPiece();
+    } else {
+      const swap = holdPiece;
+      holdPiece = temp;
+      current = { matrix: swap.matrix, x: Math.floor((COLS - swap.matrix[0].length) / 2), y: 0 };
+    }
+    drawMini(holdCtx, holdPiece);
+    beep(392, 0.06);
+  }
+
+  function endGame() {
+    gameOver = true;
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('gameover-modal').classList.add('open');
+  }
+
+  function drawCell(cCtx, x, y, size, el, ghost = false) {
+    const px = x * size, py = y * size;
+    if (ghost) {
+      cCtx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+      cCtx.lineWidth = 1.5;
+      cCtx.strokeRect(px + 2, py + 2, size - 4, size - 4);
+      return;
+    }
+    cCtx.fillStyle = el.color;
+    cCtx.beginPath();
+    cCtx.roundRect(px + 1, py + 1, size - 2, size - 2, 5);
+    cCtx.fill();
+
+    cCtx.fillStyle = '#ffffff';
+    cCtx.font = `bold ${Math.floor(size * 0.48)}px sans-serif`;
+    cCtx.textAlign = 'center';
+    cCtx.textBaseline = 'middle';
+    cCtx.fillText(el.sym, px + size / 2, py + size / 2 + 1);
+  }
+
+  function drawMini(mCtx, piece) {
+    mCtx.clearRect(0, 0, 64, 64);
+    if (!piece) return;
+    const s = 14;
+    const ox = (64 - piece.matrix[0].length * s) / 2;
+    const oy = (64 - piece.matrix.length * s) / 2;
+    piece.matrix.forEach((row, r) => row.forEach((el, c) => {
+      if (!el) return;
+      mCtx.fillStyle = el.color;
+      mCtx.fillRect(ox + c * s + 1, oy + r * s + 1, s - 2, s - 2);
+      mCtx.fillStyle = '#fff';
+      mCtx.font = 'bold 8px sans-serif';
+      mCtx.textAlign = 'center';
+      mCtx.textBaseline = 'middle';
+      mCtx.fillText(el.sym, ox + c * s + s / 2, oy + r * s + s / 2);
+    }));
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
+    // 網格線
+    ctx.strokeStyle = 'rgba(30, 41, 59, 0.7)';
+    ctx.lineWidth = 1;
+    for (let r = 0; r <= ROWS; r++) {
+      ctx.beginPath(); ctx.moveTo(0, r * cellSize); ctx.lineTo(boardCanvas.width, r * cellSize); ctx.stroke();
+    }
+    for (let c = 0; c <= COLS; c++) {
+      ctx.beginPath(); ctx.moveTo(c * cellSize, 0); ctx.lineTo(c * cellSize, boardCanvas.height); ctx.stroke();
+    }
+
+    // 已固定方塊
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c]) drawCell(ctx, c, r, cellSize, grid[r][c]);
+      }
+    }
+
+    if (current && !gameOver) {
+      // 落點預覽 Ghost
+      let gy = 0;
+      while (!collide(current, 0, gy + 1)) gy++;
+      current.matrix.forEach((row, r) => row.forEach((el, c) => {
+        if (el) drawCell(ctx, current.x + c, current.y + r + gy, cellSize, el, true);
+      }));
+
+      // 當前方塊
+      current.matrix.forEach((row, r) => row.forEach((el, c) => {
+        if (el) drawCell(ctx, current.x + c, current.y + r, cellSize, el);
+      }));
+    }
+  }
+
+  // 操控函式
+  function moveLeft() { if (!gameOver && !collide(current, -1, 0)) { current.x--; beep(280, 0.03); } }
+  function moveRight() { if (!gameOver && !collide(current, 1, 0)) { current.x++; beep(280, 0.03); } }
+  function softDrop() {
+    if (gameOver) return;
+    if (!collide(current, 0, 1)) { current.y++; }
+    else { lockPiece(); }
+  }
+  function hardDrop() {
+    if (gameOver) return;
+    while (!collide(current, 0, 1)) current.y++;
+    lockPiece();
+  }
+  function rotatePiece() {
+    if (gameOver) return;
+    const rotated = rotateMatrix(current.matrix);
+    if (!collide(current, 0, 0, rotated)) { current.matrix = rotated; beep(360, 0.04); }
+    else if (!collide(current, -1, 0, rotated)) { current.x--; current.matrix = rotated; }
+    else if (!collide(current, 1, 0, rotated)) { current.x++; current.matrix = rotated; }
+  }
+
+  // 按鈕與鍵盤綁定
+  document.getElementById('btn-left').addEventListener('pointerdown', (e) => { e.preventDefault(); moveLeft(); });
+  document.getElementById('btn-right').addEventListener('pointerdown', (e) => { e.preventDefault(); moveRight(); });
+  document.getElementById('btn-down').addEventListener('pointerdown', (e) => { e.preventDefault(); softDrop(); });
+  document.getElementById('btn-drop').addEventListener('pointerdown', (e) => { e.preventDefault(); hardDrop(); });
+  document.getElementById('btn-rot').addEventListener('pointerdown', (e) => { e.preventDefault(); rotatePiece(); });
+  document.getElementById('hold-canvas').parentElement.addEventListener('pointerdown', holdCurrent);
+
+  // 棋盤直接觸控滑動手勢
+  let tStartX = 0, tStartY = 0, tMoved = false;
+  boardCanvas.addEventListener('pointerdown', (e) => {
+    tStartX = e.clientX; tStartY = e.clientY; tMoved = false;
+  });
+  boardCanvas.addEventListener('pointermove', (e) => {
+    const dx = e.clientX - tStartX, dy = e.clientY - tStartY;
+    if (Math.abs(dx) > cellSize) {
+      dx > 0 ? moveRight() : moveLeft();
+      tStartX = e.clientX; tMoved = true;
+    } else if (dy > cellSize * 1.4) {
+      softDrop();
+      tStartY = e.clientY; tMoved = true;
+    }
+  });
+  boardCanvas.addEventListener('pointerup', (e) => {
+    const dy = e.clientY - tStartY;
+    if (!tMoved && Math.abs(dy) < 12) rotatePiece();
+    else if (dy > 75) hardDrop();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') moveLeft();
+    else if (e.key === 'ArrowRight') moveRight();
+    else if (e.key === 'ArrowDown') softDrop();
+    else if (e.key === 'ArrowUp') rotatePiece();
+    else if (e.key === ' ') hardDrop();
+    else if (e.key.toLowerCase() === 'c') holdCurrent();
+  });
+
+  document.getElementById('btn-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.add('open'));
+  document.getElementById('btn-close-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.remove('open'));
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    grid = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    score = 0; lines = 0; gameOver = false; holdPiece = null;
+    document.getElementById('score').textContent = '0';
+    document.getElementById('lines').textContent = '0';
+    document.getElementById('gameover-modal').classList.remove('open');
+    spawnPiece();
+  });
+
+  spawnPiece();
+  let lastDrop = 0;
+  function loop(now) {
+    if (!gameOver && now - lastDrop > 750) {
+      softDrop();
+      lastDrop = now;
+    }
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

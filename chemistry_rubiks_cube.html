@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>3D 化學魔術方塊 | Chemistry Rubik's Cube</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    html, body {
+      width: 100%; height: 100dvh; overflow: hidden;
+      background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+      color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+    }
+    #app { display: flex; flex-direction: column; height: 100dvh; width: 100%; }
+    .top-bar {
+      padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+      background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15); z-index: 10;
+    }
+    .back-link {
+      color: #38bdf8; text-decoration: none; font-size: 14px; font-weight: 700;
+      padding: 6px 10px; border-radius: 8px; background: rgba(56, 189, 248, 0.12);
+    }
+    .stats { display: flex; gap: 14px; font-size: 14px; font-weight: 700; }
+    .stat-box span { color: #38bdf8; font-size: 16px; }
+    .info-banner {
+      padding: 8px 16px; text-align: center; font-size: 13px; color: #cbd5e1;
+      background: rgba(30, 41, 59, 0.6); z-index: 10;
+    }
+    .info-banner strong { color: #fbbf24; }
+    #canvas-container {
+      flex: 1; position: relative; touch-action: none; cursor: grab;
+    }
+    #canvas-container:active { cursor: grabbing; }
+    #toast {
+      position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(90deg, #059669, #10b981); color: #fff;
+      padding: 8px 18px; border-radius: 999px; font-weight: 800; font-size: 15px;
+      box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4); opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease; z-index: 20; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(4px); }
+    .bottom-bar {
+      padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+      background: rgba(15, 23, 42, 0.92); border-top: 1px solid rgba(148, 163, 184, 0.15);
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; z-index: 10;
+    }
+    button.ctrl-btn {
+      padding: 12px 6px; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.25);
+      background: #1e293b; color: #f8fafc; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: background 0.15s;
+    }
+    button.ctrl-btn:active { background: #334155; }
+    button.ctrl-btn.primary { background: #0284c7; border-color: #38bdf8; }
+    /* Modal 圖鑑 */
+    .modal {
+      position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); z-index: 50;
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal.open { display: flex; }
+    .sheet {
+      width: 100%; max-width: 500px; max-height: 75dvh; overflow-y: auto;
+      background: #0f172a; border-top-left-radius: 24px; border-top-right-radius: 24px;
+      padding: 20px; border-top: 1px solid #334155;
+    }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .recipe-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px; background: #1e293b; border-radius: 12px; margin-bottom: 8px;
+    }
+    .formula { font-weight: 800; color: #38bdf8; font-size: 16px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="top-bar">
+    <a href="./index.html" class="back-link">← 大廳</a>
+    <div class="stats">
+      <div class="stat-box">分數 <span id="score">0</span></div>
+      <div class="stat-box">步數 <span id="moves">0</span></div>
+    </div>
+  </div>
+  <div class="info-banner" id="hint-text">滑動<strong>方塊</strong>轉動排面 ｜ 滑動<strong>背景</strong>旋轉視角</div>
+  <div id="canvas-container">
+    <div id="toast">合成 H₂O +150!</div>
+  </div>
+  <div class="bottom-bar">
+    <button class="ctrl-btn" id="btn-reset-view">🎯 正視角</button>
+    <button class="ctrl-btn" id="btn-undo">↩️ 復原</button>
+    <button class="ctrl-btn" id="btn-scramble">🔀 洗牌</button>
+    <button class="ctrl-btn primary" id="btn-guide">📖 配方</button>
+  </div>
+</div>
+
+<div class="modal" id="guide-modal">
+  <div class="sheet">
+    <div class="sheet-header">
+      <h3>🧪 3格連線化學配方表</h3>
+      <button class="ctrl-btn" id="btn-close-guide" style="padding:6px 14px;">關閉</button>
+    </div>
+    <p style="font-size:13px; color:#94a3b8; margin-bottom:12px;">在魔術方塊任意一面的「橫排或直排 3 格」湊齊以下元素組合即可得分並刷新元素：</p>
+    <div id="recipe-list"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  const ELEMENTS = [
+    { sym: 'H', name: '氫 (1)', color: '#0284c7' },
+    { sym: 'O', name: '氧 (8)', color: '#dc2626' },
+    { sym: 'C', name: '碳 (6)', color: '#334155' },
+    { sym: 'Na', name: '鈉 (11)', color: '#7c3aed' },
+    { sym: 'Cl', name: '氯 (17)', color: '#059669' },
+    { sym: 'Ca', name: '鈣 (20)', color: '#d97706' }
+  ];
+
+  const RECIPES = [
+    { formula: 'H₂O', name: '水分子', req: { H: 2, O: 1 }, pts: 150 },
+    { formula: 'CO₂', name: '二氧化碳', req: { C: 1, O: 2 }, pts: 150 },
+    { formula: 'CaO', name: '氧化鈣 (生石灰)', req: { Ca: 1, O: 1 }, pts: 120 },
+    { formula: 'Na₂O', name: '氧化鈉', req: { Na: 2, O: 1 }, pts: 160 },
+    { formula: 'CaCl₂', name: '氯化鈣', req: { Ca: 1, Cl: 2 }, pts: 180 },
+    { formula: 'NaOH', name: '氫氧化鈉', req: { Na: 1, O: 1, H: 1 }, pts: 220 },
+    { formula: 'HClO', name: '次氯酸', req: { H: 1, Cl: 1, O: 1 }, pts: 220 },
+    { formula: 'CH₄ (簡化)', name: '碳氫化合物', req: { C: 1, H: 2 }, pts: 140 },
+    { formula: 'O₃', name: '臭氧', req: { O: 3 }, pts: 200 },
+    { formula: 'H₂', name: '氫氣分子', req: { H: 3 }, pts: 180 }
+  ];
+
+  // 渲染配方表
+  const recipeListEl = document.getElementById('recipe-list');
+  RECIPES.forEach(r => {
+    const reqStr = Object.entries(r.req).map(([k, v]) => `${k}×${v}`).join(' + ');
+    recipeListEl.innerHTML += `
+      <div class="recipe-item">
+        <div><div class="formula">${r.formula} <span style="font-size:13px;color:#e2e8f0;">${r.name}</span></div>
+        <div style="font-size:12px;color:#94a3b8;">需求：${reqStr}</div></div>
+        <div style="font-weight:800;color:#fbbf24;">+${r.pts}</div>
+      </div>`;
+  });
+
+  // Web Audio 音效
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playTone(freq, type = 'sine', dur = 0.09) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + dur);
+  }
+
+  // Three.js 場景建置
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
+  const defaultCamPos = new THREE.Vector3(5.2, 4.4, 6.2);
+  camera.position.copy(defaultCamPos);
+  camera.lookAt(0, 0, 0);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+  scene.add(ambient);
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+  dirLight.position.set(6, 10, 8);
+  scene.add(dirLight);
+
+  function createStickerTexture(el) {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 256;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, 256, 256);
+
+    ctx.fillStyle = el.color;
+    ctx.beginPath();
+    ctx.roundRect(14, 14, 228, 228, 32);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 112px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(el.sym, 128, 122);
+
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillText(el.name, 128, 204);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  const stickerMaterials = ELEMENTS.map(el => new THREE.MeshStandardMaterial({
+    map: createStickerTexture(el), roughness: 0.35, metalness: 0.1
+  }));
+  const innerMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+
+  const cubeGroup = new THREE.Group();
+  scene.add(cubeGroup);
+  const cubies = [];
+  const gap = 1.04;
+
+  function randomElementIndex() {
+    return Math.floor(Math.random() * ELEMENTS.length);
+  }
+
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      for (let z = -1; z <= 1; z++) {
+        const geo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+        const faceIndices = [
+          x === 1 ? randomElementIndex() : -1,
+          x === -1 ? randomElementIndex() : -1,
+          y === 1 ? randomElementIndex() : -1,
+          y === -1 ? randomElementIndex() : -1,
+          z === 1 ? randomElementIndex() : -1,
+          z === -1 ? randomElementIndex() : -1
+        ];
+        const mats = faceIndices.map(idx => idx >= 0 ? stickerMaterials[idx] : innerMat);
+        const mesh = new THREE.Mesh(geo, mats);
+        mesh.position.set(x * gap, y * gap, z * gap);
+        mesh.userData = { grid: new THREE.Vector3(x, y, z), faceIndices };
+        cubeGroup.add(mesh);
+        cubies.push(mesh);
+      }
+    }
+  }
+
+  let score = 0, moves = 0;
+  const moveHistory = [];
+  let isAnimating = false;
+
+  function updateUI() {
+    document.getElementById('score').textContent = score;
+    document.getElementById('moves').textContent = moves;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  // 旋轉切片邏輯
+  function rotateSlice(axis, layerIndex, dir, recordHistory = true, fast = false) {
+    if (isAnimating) return;
+    isAnimating = true;
+
+    const targetCubies = cubies.filter(c => Math.round(c.position[axis] / gap) === layerIndex);
+    const pivot = new THREE.Object3D();
+    cubeGroup.add(pivot);
+    targetCubies.forEach(c => pivot.attach(c));
+
+    const targetAngle = dir * (Math.PI / 2);
+    const duration = fast ? 90 : 220;
+    const startTime = performance.now();
+    playTone(320, 'triangle', 0.08);
+
+    function step(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      pivot.rotation[axis] = targetAngle * ease;
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        pivot.rotation[axis] = targetAngle;
+        pivot.updateMatrixWorld();
+        targetCubies.forEach(c => {
+          cubeGroup.attach(c);
+          c.position.x = Math.round(c.position.x / gap) * gap;
+          c.position.y = Math.round(c.position.y / gap) * gap;
+          c.position.z = Math.round(c.position.z / gap) * gap;
+          // 校正旋轉為 90 度倍數
+          const euler = new THREE.Euler().setFromQuaternion(c.quaternion);
+          euler.x = Math.round(euler.x / (Math.PI / 2)) * (Math.PI / 2);
+          euler.y = Math.round(euler.y / (Math.PI / 2)) * (Math.PI / 2);
+          euler.z = Math.round(euler.z / (Math.PI / 2)) * (Math.PI / 2);
+          c.quaternion.setFromEuler(euler);
+        });
+        cubeGroup.remove(pivot);
+        isAnimating = false;
+
+        if (recordHistory) {
+          moveHistory.push({ axis, layerIndex, dir });
+          moves++;
+          updateUI();
+          checkMatches();
+        }
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // 檢查 6 個面上是否有 3 格連線達成化學配方
+  function checkMatches() {
+    const faces = [
+      { normal: new THREE.Vector3(1, 0, 0), u: 'y', v: 'z', fixed: 'x', val: 1 },
+      { normal: new THREE.Vector3(-1, 0, 0), u: 'y', v: 'z', fixed: 'x', val: -1 },
+      { normal: new THREE.Vector3(0, 1, 0), u: 'x', v: 'z', fixed: 'y', val: 1 },
+      { normal: new THREE.Vector3(0, -1, 0), u: 'x', v: 'z', fixed: 'y', val: -1 },
+      { normal: new THREE.Vector3(0, 0, 1), u: 'x', v: 'y', fixed: 'z', val: 1 },
+      { normal: new THREE.Vector3(0, 0, -1), u: 'x', v: 'y', fixed: 'z', val: -1 }
+    ];
+
+    let totalGained = 0;
+    let matchedNames = [];
+
+    faces.forEach(f => {
+      const faceCubies = cubies.filter(c => Math.round(c.position[f.fixed] / gap) === f.val);
+      // 取得該面朝外的材質貼圖元素
+      const grid = {};
+      faceCubies.forEach(c => {
+        const ui = Math.round(c.position[f.u] / gap);
+        const vi = Math.round(c.position[f.v] / gap);
+        // 找出朝向 f.normal 的局部面索引
+        const localNormals = [
+          new THREE.Vector3(1,0,0), new THREE.Vector3(-1,0,0),
+          new THREE.Vector3(0,1,0), new THREE.Vector3(0,-1,0),
+          new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,-1)
+        ];
+        let outwardMatIdx = -1;
+        localNormals.forEach((ln, idx) => {
+          const worldN = ln.clone().applyQuaternion(c.quaternion);
+          if (worldN.dot(f.normal) > 0.8) outwardMatIdx = idx;
+        });
+        const mat = c.material[outwardMatIdx];
+        const elIdx = stickerMaterials.indexOf(mat);
+        grid[`${ui},${vi}`] = { cubie: c, matIdx: outwardMatIdx, sym: elIdx >= 0 ? ELEMENTS[elIdx].sym : null };
+      });
+
+      const lines = [];
+      for (let i = -1; i <= 1; i++) {
+        lines.push([grid[`${i},-1`], grid[`${i},0`], grid[`${i},1`]]);
+        lines.push([grid[`-1,${i}`], grid[`0,${i}`], grid[`1,${i}`]]);
+      }
+
+      lines.forEach(line => {
+        if (line.some(cell => !cell || !cell.sym)) return;
+        const counts = {};
+        line.forEach(cell => counts[cell.sym] = (counts[cell.sym] || 0) + 1);
+
+        for (const r of RECIPES) {
+          const reqKeys = Object.keys(r.req);
+          if (reqKeys.length === Object.keys(counts).length && reqKeys.every(k => counts[k] === r.req[k])) {
+            totalGained += r.pts;
+            matchedNames.push(r.formula);
+            // 刷新這 3 格元素
+            line.forEach(cell => {
+              const newIdx = randomElementIndex();
+              cell.cubie.material[cell.matIdx] = stickerMaterials[newIdx];
+              cell.sym = ELEMENTS[newIdx].sym;
+            });
+            break;
+          }
+        }
+      });
+    });
+
+    if (totalGained > 0) {
+      score += totalGained;
+      updateUI();
+      showToast(`⚗️ 合成 ${[...new Set(matchedNames)].join(' & ')} +${totalGained} 分！`);
+      playTone(587.33, 'sine', 0.15);
+      setTimeout(() => playTone(880, 'sine', 0.2), 90);
+      if (navigator.vibrate) navigator.vibrate([30, 40, 30]);
+    }
+  }
+
+  // 雙層手勢觸控：點擊方塊轉切片 vs 點擊背景轉視角
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let dragMode = null; // 'slice' | 'orbit'
+  let startX = 0, startY = 0;
+  let hitInfo = null;
+  let spherical = new THREE.Spherical().setFromVector3(camera.position);
+
+  function getPointerNDC(clientX, clientY) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    return new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+  }
+
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    if (isAnimating) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    pointer.copy(getPointerNDC(e.clientX, e.clientY));
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(cubies);
+
+    if (hits.length > 0) {
+      dragMode = 'slice';
+      const hit = hits[0];
+      const worldNormal = hit.face.normal.clone().applyQuaternion(hit.object.quaternion).round();
+      hitInfo = { cubie: hit.object, normal: worldNormal };
+      // 顯示選中元素資訊
+      const faceIdx = hit.face.materialIndex;
+      const elIdx = stickerMaterials.indexOf(hit.object.material[faceIdx]);
+      if (elIdx >= 0) {
+        document.getElementById('hint-text').innerHTML = `已選取元素：<strong>${ELEMENTS[elIdx].sym} - ${ELEMENTS[elIdx].name}</strong>（滑動轉動該排）`;
+      }
+    } else {
+      dragMode = 'orbit';
+      hitInfo = null;
+    }
+  });
+
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    if (!dragMode || isAnimating) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    if (dragMode === 'orbit') {
+      spherical.theta -= dx * 0.008;
+      spherical.phi = Math.max(0.25, Math.min(Math.PI - 0.25, spherical.phi - dy * 0.008));
+      camera.position.setFromSpherical(spherical);
+      camera.lookAt(0, 0, 0);
+      startX = e.clientX;
+      startY = e.clientY;
+    } else if (dragMode === 'slice' && Math.hypot(dx, dy) > 26) {
+      // 計算螢幕滑動方向對應的 3D 切線軸
+      const camRight = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0);
+      const camUp = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
+      const moveVec = camRight.multiplyScalar(dx).add(camUp.multiplyScalar(-dy)).normalize();
+
+      // 找出與法線和滑動方向都垂直的旋轉軸
+      const rotAxisVec = new THREE.Vector3().crossVectors(hitInfo.normal, moveVec);
+      const axes = ['x', 'y', 'z'];
+      let bestAxis = 'y', maxVal = 0;
+      axes.forEach(ax => {
+        if (Math.abs(rotAxisVec[ax]) > maxVal) {
+          maxVal = Math.abs(rotAxisVec[ax]);
+          bestAxis = ax;
+        }
+      });
+      const dir = Math.sign(rotAxisVec[bestAxis]) || 1;
+      const layerIndex = Math.round(hitInfo.cubie.position[bestAxis] / gap);
+
+      dragMode = null;
+      rotateSlice(bestAxis, layerIndex, dir, true, false);
+    }
+  });
+
+  window.addEventListener('pointerup', () => { dragMode = null; });
+
+  // 按鈕事件
+  document.getElementById('btn-reset-view').addEventListener('click', () => {
+    spherical.setFromVector3(defaultCamPos);
+    camera.position.copy(defaultCamPos);
+    camera.lookAt(0, 0, 0);
+    playTone(440, 'sine', 0.06);
+  });
+
+  document.getElementById('btn-undo').addEventListener('click', () => {
+    if (isAnimating || moveHistory.length === 0) return;
+    const last = moveHistory.pop();
+    moves = Math.max(0, moves - 1);
+    updateUI();
+    rotateSlice(last.axis, last.layerIndex, -last.dir, false, false);
+  });
+
+  document.getElementById('btn-scramble').addEventListener('click', () => {
+    if (isAnimating) return;
+    let count = 0;
+    const axes = ['x', 'y', 'z'];
+    const timer = setInterval(() => {
+      if (isAnimating) return;
+      const ax = axes[Math.floor(Math.random() * 3)];
+      const layer = [-1, 0, 1][Math.floor(Math.random() * 3)];
+      const dir = Math.random() > 0.5 ? 1 : -1;
+      rotateSlice(ax, layer, dir, false, true);
+      count++;
+      if (count >= 8) clearInterval(timer);
+    }, 110);
+  });
+
+  document.getElementById('btn-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.add('open'));
+  document.getElementById('btn-close-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.remove('open'));
+
+  window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+</script>
+</body>
+</html>
