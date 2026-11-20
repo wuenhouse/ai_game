@@ -20,17 +20,17 @@
     .hud-label { color: #94a3b8; font-size: 11px; }
     .hud-val { color: #38bdf8; }
     /* Element bar */
-    .elem-bar { padding: 4px 12px; background: #0b1120; border-bottom: 1px solid #1e293b;
+    .elem-bar { flex-wrap: wrap; padding: 4px 12px; background: #0b1120; border-bottom: 1px solid #1e293b;
       display: flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 700; z-index: 5; }
-    .elem-slot { padding: 2px 8px; border-radius: 6px; background: #1e293b; border: 1px solid #334155; }
+    .elem-slot { color: #f8fafc; font: inherit; cursor: pointer; touch-action: manipulation; padding: 2px 8px; border-radius: 6px; background: #1e293b; border: 1px solid #334155; }
     .elem-slot.active { border-color: #fbbf24; background: #332800; }
     /* Canvas area */
     .stage { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
-    canvas#game { background: #0f172a; border-radius: 4px; touch-action: none; }
+    canvas#game { background: #0f172a; border-radius: 4px; touch-action: none; image-rendering: pixelated; }
     /* Mobile controls */
     .controls { padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: #0f172a;
-      border-top: 1px solid #1e293b; display: none; gap: 8px; z-index: 5; }
-    .ctrl-left { display: flex; align-items: center; justify-content: center; width: 120px; height: 120px; position: relative; }
+      border-top: 1px solid #1e293b; display: flex; gap: 8px; z-index: 5; }
+    .ctrl-left { display: none; align-items: center; justify-content: center; width: 120px; height: 120px; position: relative; }
     .ctrl-right { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-end; margin-left: auto; }
     .abtn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #334155; background: #1e293b;
       color: #f8fafc; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;
@@ -39,10 +39,11 @@
     .abtn.atk { border-color: #ef4444; background: #450a0a; }
     .abtn.shoot { border-color: #3b82f6; background: #172554; }
     .skill-row { display: flex; gap: 4px; }
-    .skill-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
+    .skill-btn { min-width: 48px; padding: 4px; height: 44px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
       color: #94a3b8; font-size: 11px; font-weight: 700; touch-action: manipulation; }
     .menu-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
       color: #fbbf24; font-size: 12px; font-weight: 700; touch-action: manipulation; }
+    .skill-btn.selected { border-color: #fbbf24; background: #332800; box-shadow: 0 0 0 1px #fbbf24; }
     /* Modals */
     .modal { position: fixed; inset: 0; background: rgba(2,6,23,0.85); z-index: 50;
       display: none; align-items: center; justify-content: center; padding: 16px; }
@@ -74,7 +75,7 @@
       transition: opacity 0.2s; z-index: 20; white-space: nowrap; box-shadow: 0 6px 15px rgba(16,185,129,0.4); }
     #toast.show { opacity: 1; }
     /* Desktop: hide mobile controls */
-    @media (hover: none) and (pointer: coarse) { .controls { display: flex !important; } }
+    @media (hover: none) and (pointer: coarse) { .ctrl-left { display: flex; } }
   </style>
 </head>
 <body>
@@ -117,7 +118,7 @@
         </div>
         <div style="display:flex;gap:8px;">
           <button class="abtn atk" id="btn-atk">⚔️</button>
-          <button class="abtn shoot" id="btn-shoot">🔵</button>
+          <button class="abtn shoot" id="btn-shoot" title="發射元素彈（點擊上方元素欄切換彈藥）" aria-label="發射元素彈">🔵</button>
         </div>
       </div>
     </div>
@@ -130,10 +131,12 @@
       <button class="tab-btn active" data-tab="inv">背包</button>
       <button class="tab-btn" data-tab="codex">圖鑑</button>
       <button class="tab-btn" data-tab="status">狀態</button>
+      <button class="tab-btn" data-tab="help">操作</button>
     </div>
     <div id="tab-inv"></div>
     <div id="tab-codex" style="display:none"></div>
     <div id="tab-status" style="display:none"></div>
+    <div id="tab-help" style="display:none"></div>
     <button class="menu-btn" id="btn-close-menu" style="width:100%;margin-top:12px;">關閉</button>
   </div>
 </div>
@@ -256,28 +259,34 @@
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         const t = room.tiles[r][c];
-        ctx.fillStyle = TILE_COLORS[t];
-        ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
-        // Grid line
-        ctx.strokeStyle = 'rgba(30,41,59,0.4)';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(c * tileSize, r * tileSize, tileSize, tileSize);
-        // Rock/grass/water decorations
-        if (t === TILE.ROCK) {
-          ctx.fillStyle = '#64748b';
-          ctx.font = `${tileSize * 0.5}px sans-serif`;
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText('🪨', c * tileSize + tileSize / 2, r * tileSize + tileSize / 2);
-        } else if (t === TILE.GRASS) {
-          ctx.fillStyle = '#22c55e';
-          ctx.font = `${tileSize * 0.45}px sans-serif`;
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText('~', c * tileSize + tileSize / 2, r * tileSize + tileSize / 2);
-        } else if (t === TILE.WATER) {
-          ctx.fillStyle = '#38bdf8';
-          ctx.font = `${tileSize * 0.45}px sans-serif`;
-          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillText('≋', c * tileSize + tileSize / 2, r * tileSize + tileSize / 2);
+        const x = c * tileSize, y = r * tileSize;
+        const horiz = r === 0 || r === ROWS - 1;
+        const vert = c === 0 || c === COLS - 1;
+        const border = horiz || vert;
+        const edgeAngle = r === ROWS - 1 ? Math.PI
+          : c === 0 ? -Math.PI / 2 : c === COLS - 1 ? Math.PI / 2 : 0;
+        // Keep the random room layout and all collisions driven by room.tiles.
+        const variant = ((r * 17 + c * 13 + state.mapX * 7 + state.mapY) % 11) < 3 ? 1 : 0;
+        const baseDrawn = drawArt(terrainArt, variant, x, y, tileSize, tileSize);
+        if (baseDrawn) {
+          switch (t) {
+            case TILE.FLOOR:
+              if (border) drawTerrainDetail(6, x, y, edgeAngle);
+              break;
+            case TILE.WALL:
+              if (horiz && vert) drawTerrainDetail(7, x, y);
+              else drawTerrainDetail(2, x, y, edgeAngle);
+              break;
+            case TILE.ROCK: drawTerrainDetail(3, x, y); break;
+            case TILE.GRASS: drawTerrainDetail(4, x, y); break;
+            case TILE.WATER: drawTerrainDetail(5, x, y); break;
+          }
+        } else {
+          ctx.fillStyle = TILE_COLORS[t];
+          ctx.fillRect(x, y, tileSize, tileSize);
+          ctx.strokeStyle = 'rgba(30,41,59,0.4)';
+          ctx.lineWidth = 0.5;
+          ctx.strokeRect(x, y, tileSize, tileSize);
         }
       }
     }
@@ -290,13 +299,19 @@
     state.mapX = nx;
     state.mapY = ny;
     generateRoom(nx, ny);
+    // Clear room-local effects
+    projectiles = [];
+    traps = [];
+    acidZones = [];
+    smokeTimer = 0;
+    castVisuals = [];
     return true;
   }
 
   // === PLAYER ===
   let player = { x: 0, y: 0, dir: 'down', hp: 50, maxHp: 50, mp: 20, maxMp: 20,
     atk: 5, level: 1, exp: 0, speed: 4.5,
-    atkTimer: 0, invincible: 0, shieldTimer: 0 };
+    atkTimer: 0, attackDir: 'down', shotTimer: 0, invincible: 0, shieldTimer: 0 };
 
   const keys = { up: false, down: false, left: false, right: false, attack: false, shoot: false };
 
@@ -306,6 +321,9 @@
     player.hp = player.maxHp;
     player.mp = player.maxMp;
     player.atkTimer = 0;
+    player.attackDir = player.dir;
+    player.shotTimer = 0;
+    castVisuals = [];
     player.invincible = 0;
     player.shieldTimer = 0;
   }
@@ -344,60 +362,120 @@
         player.y = ny;
       }
     }
-    // Room transition
-    if (player.x < 0.1) { if (transitionRoom(-1, 0)) player.x = COLS - 1.5; }
-    else if (player.x > COLS - 0.1) { if (transitionRoom(1, 0)) player.x = 1.5; }
-    else if (player.y < 0.1) { if (transitionRoom(0, -1)) player.y = ROWS - 1.5; }
-    else if (player.y > ROWS - 0.1) { if (transitionRoom(0, 1)) player.y = 1.5; }
+    // Room transition — check player is at an exit tile and near the edge
+    const pc = Math.floor(player.x), pr = Math.floor(player.y);
+    if (player.x < 0.5 && (pr === 5 || pr === 6)) {
+      if (transitionRoom(-1, 0)) player.x = COLS - 1.5;
+    } else if (player.x > COLS - 0.5 && (pr === 5 || pr === 6)) {
+      if (transitionRoom(1, 0)) player.x = 1.5;
+    } else if (player.y < 0.5 && (pc === 7 || pc === 8)) {
+      if (transitionRoom(0, -1)) player.y = ROWS - 1.5;
+    } else if (player.y > ROWS - 0.5 && (pc === 7 || pc === 8)) {
+      if (transitionRoom(0, 1)) player.y = 1.5;
+    }
     // Timers
     if (player.atkTimer > 0) player.atkTimer -= dt;
+    if (player.shotTimer > 0) player.shotTimer -= dt;
     if (player.invincible > 0) player.invincible -= dt;
     if (player.shieldTimer > 0) player.shieldTimer -= dt;
   }
 
   const DIR_ARROWS = { up: '▲', down: '▼', left: '◀', right: '▶' };
+  const DIR_FRAME = { down: 0, left: 1, right: 2, up: 3 };
+  const DIR_ANGLE = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
+  const AMMO_FRAME = { H: 1, O: 2, C: 3, Na: 4, Cl: 5, Ca: 6 };
 
   function drawPlayer() {
-    const px = player.x * tileSize;
-    const py = player.y * tileSize;
-    const s = tileSize * 0.8;
-    // Body
-    ctx.fillStyle = player.invincible > 0 ? (Math.floor(player.invincible * 10) % 2 ? '#fbbf24' : '#38bdf8') : '#38bdf8';
-    ctx.fillRect(px - s / 2, py - s / 2, s, s);
-    // Border
-    ctx.strokeStyle = '#7dd3fc';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(px - s / 2, py - s / 2, s, s);
-    // Direction arrow
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${tileSize * 0.4}px sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(DIR_ARROWS[player.dir], px, py);
-    // Attack visual
-    if (player.atkTimer > 0.15) {
-      ctx.strokeStyle = '#fbbf24';
-      ctx.lineWidth = 3;
-      const atkRange = tileSize * 1.5;
-      const angles = { up: -Math.PI / 2, down: Math.PI / 2, left: Math.PI, right: 0 };
-      const a = angles[player.dir];
-      ctx.beginPath();
-      ctx.arc(px, py, atkRange, a - 0.6, a + 0.6);
-      ctx.stroke();
+    const px = Math.round(player.x * tileSize);
+    const py = Math.round(player.y * tileSize);
+    const swinging = player.atkTimer > 0.15;
+    const dir = swinging ? player.attackDir : player.dir;
+    const frame = swinging ? (player.atkTimer > 0.25 ? 1 : 2) : player.shotTimer > 0 ? 1 : 0;
+    const scale = tileSize / 32;
+    const flashing = player.invincible > 0 && Math.floor(player.invincible * 16) % 2 !== 0;
+    ctx.save();
+    if (flashing) ctx.globalAlpha = 0.55;
+    const drawn = drawArt(heroArt, frame * 4 + DIR_FRAME[dir],
+      px - 20 * scale, py - 26 * scale, 40 * scale, 40 * scale);
+    ctx.restore();
+    if (!drawn) {
+      const s = tileSize * 0.8;
+      ctx.fillStyle = flashing ? '#fbbf24' : '#38bdf8';
+      ctx.fillRect(px - s / 2, py - s / 2, s, s);
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${tileSize * 0.4}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(DIR_ARROWS[dir], px, py);
+    }
+    if (swinging && (!drawn || frame === 2)) {
+      const angle = DIR_ANGLE[dir];
+      const painted = drawCombat(0, px + Math.cos(angle) * tileSize * 0.95,
+        py + Math.sin(angle) * tileSize * 0.95, tileSize * 1.45, angle);
+      if (!painted) {
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(px, py, tileSize * 1.5, angle - 0.6, angle + 0.6);
+        ctx.stroke();
+      }
     }
   }
 
   // === CANVAS SETUP ===
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  const WORLD_ZOOM = 2;
   let tileSize = 32;
+
+  function loadArt(file, cell, cols, rows) {
+    const img = new Image();
+    img.src = 'assets/chem-arpg/' + file;
+    return { img, cell, cols, rows };
+  }
+
+  const terrainArt = loadArt('terrain.png', 32, 8, 1);
+  const heroArt = loadArt('hero.png', 40, 4, 3);
+  const combatArt = loadArt('combat.png', 48, 4, 3);
+
+  function drawArt(art, frame, x, y, w, h) {
+    const { img, cell, cols, rows } = art;
+    if (img.naturalWidth !== cell * cols || img.naturalHeight !== cell * rows) return false;
+    ctx.drawImage(img, (frame % cols) * cell, Math.floor(frame / cols) * cell, cell, cell,
+      Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+    return true;
+  }
+
+  function drawTerrainDetail(frame, x, y, angle = 0) {
+    if (!angle) return drawArt(terrainArt, frame, x, y, tileSize, tileSize);
+    ctx.save();
+    ctx.translate(x + tileSize / 2, y + tileSize / 2);
+    ctx.rotate(angle);
+    // Keep rotated odd-size tiles aligned with the underlying pixel grid.
+    const { img, cell } = terrainArt;
+    ctx.drawImage(img, frame * cell, 0, cell, cell, -tileSize / 2, -tileSize / 2, tileSize, tileSize);
+    ctx.restore();
+    return true;
+  }
+
+  function drawCombat(frame, x, y, size, angle = 0, opacity = 1) {
+    ctx.save();
+    ctx.translate(Math.round(x), Math.round(y));
+    if (angle) ctx.rotate(angle);
+    ctx.globalAlpha *= opacity;
+    const rendered = drawArt(combatArt, frame, -size / 2, -size / 2, size, size);
+    ctx.restore();
+    return rendered;
+  }
 
   function resizeCanvas() {
     const stage = document.getElementById('stage');
     const maxW = stage.clientWidth - 8;
     const maxH = stage.clientHeight - 8;
-    tileSize = Math.floor(Math.min(maxW / COLS, maxH / ROWS));
-    canvas.width = tileSize * COLS;
-    canvas.height = tileSize * ROWS;
+    const fittedTileSize = Math.max(1, Math.floor(Math.min(maxW / COLS, maxH / ROWS)));
+    tileSize = fittedTileSize * WORLD_ZOOM;
+    canvas.width = fittedTileSize * COLS;
+    canvas.height = fittedTileSize * ROWS;
+    ctx.imageSmoothingEnabled = false;
   }
 
   // === GAME STATE ===
@@ -407,14 +485,18 @@
   let inventory = { H: 0, O: 0, C: 0, Na: 0, Cl: 0, Ca: 0 };
   let selectedAmmo = 'H';
 
-  function cycleAmmo() {
-    const syms = ELEMENTS.map(e => e.sym);
-    let idx = syms.indexOf(selectedAmmo);
-    for (let i = 1; i <= syms.length; i++) {
-      const next = syms[(idx + i) % syms.length];
-      if (inventory[next] > 0) { selectedAmmo = next; break; }
+  function cycleSkill() {
+    if (state.screen !== 'play' || state.paused) return;
+    for (let step = 1; step <= equippedSkills.length; step++) {
+      const next = (selectedSkillSlot + step) % equippedSkills.length;
+      const recipe = RECIPES.find(r => r.id === equippedSkills[next]);
+      if (!recipe) continue;
+      selectedSkillSlot = next;
+      updateHUD();
+      showToast(`選中技能：${recipe.name}（X 施放）`);
+      return;
     }
-    updateElemBar();
+    showToast('技能尚未解鎖：請到選單 → 背包合成化合物');
   }
 
   // === DROPS ===
@@ -459,8 +541,13 @@
   let projectiles = [];
 
   function shootProjectile() {
-    if (inventory[selectedAmmo] <= 0) return;
+    if (state.screen !== 'play' || state.paused) return;
+    if (inventory[selectedAmmo] <= 0) {
+      showToast(`${selectedAmmo} 彈藥不足，點擊元素欄切換彈藥`);
+      return;
+    }
     inventory[selectedAmmo]--;
+    player.shotTimer = 0.13;
     updateElemBar();
     const el = ELEMENTS.find(e => e.sym === selectedAmmo);
     const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
@@ -516,6 +603,9 @@
   function drawProjectiles() {
     projectiles.forEach(p => {
       const px = p.x * tileSize, py = p.y * tileSize;
+      // Boss fire retains its labelled shape so hostile shots stay distinguishable.
+      if (p.fromPlayer && drawCombat(AMMO_FRAME[p.element.sym], px, py,
+        tileSize * 1.13, Math.atan2(p.vy, p.vx))) return;
       ctx.fillStyle = p.element.color;
       ctx.beginPath(); ctx.arc(px, py, tileSize * 0.2, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff';
@@ -530,16 +620,30 @@
     document.getElementById('hp-fill').style.width = `${(player.hp / player.maxHp) * 100}%`;
     document.getElementById('mp-fill').style.width = `${(player.mp / player.maxMp) * 100}%`;
     document.getElementById('hud-lv').textContent = player.level;
+    equippedSkills.forEach((id, i) => {
+      const btn = document.getElementById('sk' + (i + 1));
+      const recipe = RECIPES.find(r => r.id === id);
+      btn.textContent = recipe ? `${i + 1} ${recipe.formula}` : `${i + 1} 未解鎖`;
+      btn.classList.toggle('selected', i === selectedSkillSlot && !!recipe);
+      btn.setAttribute('aria-pressed', String(i === selectedSkillSlot && !!recipe));
+      btn.title = recipe ? `${recipe.name}｜消耗 ${recipe.mp} MP｜${recipe.desc}` : '在選單的背包中合成化合物以解鎖技能';
+      btn.style.color = recipe && player.mp >= recipe.mp ? '#38bdf8' : '#94a3b8';
+    });
   }
 
   function updateElemBar() {
     const bar = document.getElementById('elem-bar');
     bar.innerHTML = ELEMENTS.map(e =>
-      `<div class="elem-slot ${e.sym === selectedAmmo ? 'active' : ''}" data-sym="${e.sym}">` +
-      `<span style="color:${e.color}">${e.sym}</span>:${inventory[e.sym] || 0}</div>`
+      `<button type="button" class="elem-slot ${e.sym === selectedAmmo ? 'active' : ''}" data-sym="${e.sym}">` +
+      `<span style="color:${e.color}">${e.sym}</span>:${inventory[e.sym] || 0}</button>`
     ).join('');
     bar.querySelectorAll('.elem-slot').forEach(el => {
-      el.addEventListener('click', () => { selectedAmmo = el.dataset.sym; updateElemBar(); });
+      el.addEventListener('click', () => {
+        if (state.screen !== 'play' || state.paused) return;
+        selectedAmmo = el.dataset.sym;
+        updateElemBar();
+        showToast(`彈藥：${selectedAmmo}（剩餘 ${inventory[selectedAmmo] || 0}）`);
+      });
     });
   }
 
@@ -549,11 +653,13 @@
     room.monsters = [];
     const count = room.type === 'boss' ? 1 : (room.type === 'treasure' ? 3 : 2 + Math.floor(Math.random() * 4));
     for (let i = 0; i < count; i++) {
-      let col, row;
+      let col, row, attempts = 0;
       do {
         col = 2 + Math.floor(Math.random() * (COLS - 4));
         row = 2 + Math.floor(Math.random() * (ROWS - 4));
+        if (++attempts > 100) break;
       } while (room.tiles[row][col] !== TILE.FLOOR);
+      if (attempts > 100) continue;
       const isBoss = room.type === 'boss' && i === 0;
       const isMolecular = !isBoss && Math.random() < 0.15 && i === 0;
       const el = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
@@ -609,8 +715,8 @@
         if (m.shootTimer <= 0 && dist < 10) {
           m.shootTimer = 2.5;
           const angle = Math.atan2(dy, dx);
-          projectiles.push({ x: m.x, y: m.y, vx: Math.cos(angle + Math.PI) * 4,
-            vy: Math.sin(angle + Math.PI) * 4, dmg: m.atk, fromPlayer: false, element: m.element, life: 3, pierce: false });
+          projectiles.push({ x: m.x, y: m.y, vx: Math.cos(angle) * 4,
+            vy: Math.sin(angle) * 4, dmg: m.atk, fromPlayer: false, element: m.element, life: 3, pierce: false });
         }
       }
     }
@@ -671,8 +777,10 @@
     const m = room.monsters[index];
     // Spawn drops
     if (m.type === 'molecular' && m.recipe) {
-      Object.entries(m.recipe.req).forEach(([sym]) => {
-        room.drops.push({ x: m.x + (Math.random() - 0.5) * 0.8, y: m.y + (Math.random() - 0.5) * 0.8, sym, life: 15 });
+      Object.entries(m.recipe.req).forEach(([sym, count]) => {
+        for (let k = 0; k < count; k++) {
+          room.drops.push({ x: m.x + (Math.random() - 0.5) * 0.8, y: m.y + (Math.random() - 0.5) * 0.8, sym, life: 15 });
+        }
       });
     } else if (m.type === 'boss') {
       const count = 3 + Math.floor(Math.random() * 3);
@@ -686,6 +794,7 @@
     // EXP
     const expGain = m.type === 'boss' ? 100 : (m.type === 'molecular' ? 30 : 10 + Math.floor(Math.random() * 11));
     gainExp(expGain);
+    window._stats.totalKills = (window._stats.totalKills || 0) + 1;
     const wasBoss = m.type === 'boss';
     room.monsters.splice(index, 1);
     playTone(520, 'sine', 0.08);
@@ -697,6 +806,7 @@
   function meleeAttack() {
     if (player.atkTimer > 0) return;
     player.atkTimer = 0.3;
+    player.attackDir = player.dir;
     playTone(300, 'square', 0.06);
     const room = rooms[state.mapY][state.mapX];
     const angles = { up: -Math.PI / 2, down: Math.PI / 2, left: Math.PI, right: 0 };
@@ -738,18 +848,20 @@
   }
 
   function checkLevelUp() {
-    const needed = player.level * player.level * 50;
+    let needed = player.level * player.level * 50;
     while (player.exp >= needed) {
       player.level++;
       player.maxHp += 10; player.maxMp += 5; player.atk += 2;
       player.hp = player.maxHp; player.mp = player.maxMp;
       showToast(`升級！Lv.${player.level}`);
+      needed = player.level * player.level * 50;
     }
   }
 
   // === PLAYER DEATH ===
   function playerDeath() {
     state.screen = 'dead';
+    window._stats.deaths = (window._stats.deaths || 0) + 1;
     saveGame();
     document.getElementById('death-modal').classList.add('open');
   }
@@ -807,27 +919,40 @@
   function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (state.screen === 'play') {
+      // Follow the player while keeping the viewport inside the room.
+      const cameraX = Math.max(0, Math.min(player.x * tileSize - canvas.width / 2, COLS * tileSize - canvas.width));
+      const cameraY = Math.max(0, Math.min(player.y * tileSize - canvas.height / 2, ROWS * tileSize - canvas.height));
+      ctx.save();
+      ctx.translate(-Math.round(cameraX), -Math.round(cameraY));
       drawRoom();
       drawMonsters();
       drawDrops();
-      drawProjectiles();
       drawTrapsAndZones();
+      drawCastVisuals();
+      drawProjectiles();
       drawPlayer();
+      ctx.restore();
       drawMinimap();
     }
   }
 
   // === KEYBOARD INPUT ===
   window.addEventListener('keydown', (e) => {
-    if (state.screen !== 'play') return;
-    switch (e.key) {
+    if (state.screen !== 'play' || state.paused) return;
+    const actionKey = ({ KeyC: 'c', KeyX: 'x', Digit1: '1', Digit2: '2', Digit3: '3', Digit4: '4',
+      Numpad1: '1', Numpad2: '2', Numpad3: '3', Numpad4: '4' })[e.code] || e.key;
+    if (['c', 'x', '1', '2', '3', '4', ' '].includes(actionKey)) {
+      e.preventDefault();
+      if (e.repeat) return;
+    }
+    switch (actionKey) {
       case 'ArrowUp': case 'w': case 'W': keys.up = true; break;
       case 'ArrowDown': case 's': case 'S': keys.down = true; break;
       case 'ArrowLeft': case 'a': case 'A': keys.left = true; break;
       case 'ArrowRight': case 'd': case 'D': keys.right = true; break;
       case 'z': case 'Z': case ' ': keys.attack = true; break;
-      case 'x': case 'X': keys.shoot = true; break;
-      case 'c': case 'C': cycleAmmo(); break;
+      case 'x': case 'X': useSkill(selectedSkillSlot); break;
+      case 'c': case 'C': cycleSkill(); break;
       case '1': useSkill(0); break;
       case '2': useSkill(1); break;
       case '3': useSkill(2); break;
@@ -906,15 +1031,57 @@
   let traps = [];
   let smokeTimer = 0;
   let acidZones = [];
+  let castVisuals = [];
+  // Visual-only timing: damage, MP costs and effect duration still come from useSkill / updateTraps.
+  const CAST_ART = {
+    heal: { frame: 11, radius: 0.95, time: 0.55 },
+    aoe: { frame: 7, radius: 3, time: 0.42 },
+    smoke: { color: '#94a3b8', radius: 2, time: 0.7 },
+    shield: { color: '#e7c69a', radius: 0.85, time: 2, follow: true },
+    explode: { frame: 8, radius: 5, time: 0.55 },
+    freeze: { frame: 9, radius: 4, time: 0.58 }
+  };
+
+  function drawCastVisuals() {
+    castVisuals.forEach(fx => {
+      const progress = 1 - fx.life / fx.time;
+      const x = (fx.follow ? player.x : fx.x) * tileSize;
+      const y = (fx.follow ? player.y : fx.y) * tileSize;
+      const radius = fx.radius * tileSize * (fx.follow ? 1 : 0.44 + progress * 0.56);
+      const opacity = fx.follow ? Math.min(0.85, fx.life * 3) : Math.min(0.9, (1 - progress) * 2.4);
+      if (fx.frame !== undefined && drawCombat(fx.frame, x, y, radius * 2.25, 0, opacity)) return;
+      ctx.save();
+      ctx.globalAlpha = opacity * 0.6;
+      ctx.strokeStyle = fx.color || '#c4e9ff';
+      ctx.lineWidth = Math.max(1, Math.round(tileSize / 12));
+      ctx.setLineDash([Math.max(2, tileSize / 6), Math.max(2, tileSize / 9)]);
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
 
   function useSkill(slotIdx) {
+    if (state.screen !== 'play' || state.paused) return;
     const skillId = equippedSkills[slotIdx];
-    if (!skillId) return;
+    if (!skillId) {
+      showToast('技能尚未解鎖：請到選單 → 背包合成化合物');
+      return;
+    }
     const recipe = RECIPES.find(r => r.id === skillId);
-    if (!recipe || player.mp < recipe.mp) return;
+    if (!recipe) return;
+    selectedSkillSlot = slotIdx;
+    updateHUD();
+    if (player.mp < recipe.mp) {
+      showToast(`MP 不足：${recipe.name}需要 ${recipe.mp} MP`);
+      return;
+    }
     player.mp -= recipe.mp;
     updateHUD();
     playTone(600, 'sine', 0.1);
+    const art = CAST_ART[recipe.skill];
+    if (art) castVisuals.push({ ...art, x: player.x, y: player.y, life: art.time });
 
     const room = rooms[state.mapY][state.mapX];
     switch (recipe.skill) {
@@ -974,6 +1141,10 @@
   }
 
   function updateTraps(dt) {
+    for (let i = castVisuals.length - 1; i >= 0; i--) {
+      castVisuals[i].life -= dt;
+      if (castVisuals[i].life <= 0) castVisuals.splice(i, 1);
+    }
     const room = rooms[state.mapY][state.mapX];
     for (let i = traps.length - 1; i >= 0; i--) {
       traps[i].life -= dt;
@@ -1018,6 +1189,9 @@
       ctx.fillText('\u2620', t.x * tileSize, t.y * tileSize);
     });
     acidZones.forEach(az => {
+      const angle = DIR_ANGLE[az.dir];
+      if (drawCombat(10, (az.x + Math.cos(angle) * 1.5) * tileSize,
+        (az.y + Math.sin(angle) * 1.5) * tileSize, 3.5 * tileSize, angle, Math.min(0.85, az.life))) return;
       const dirs = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
       const [adx, ady] = dirs[az.dir];
       ctx.fillStyle = `rgba(163, 230, 53, ${0.2 + Math.sin(Date.now() / 150) * 0.1})`;
@@ -1064,6 +1238,7 @@
   let codex = [];
   let unlockedSkills = [];
   let equippedSkills = [null, null, null, null];
+  let selectedSkillSlot = 0;
 
   function synthesize(recipeId) {
     const recipe = RECIPES.find(r => r.id === recipeId);
@@ -1104,12 +1279,13 @@
     document.querySelectorAll('.tab-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.tab === tab);
     });
-    document.getElementById('tab-inv').style.display = tab === 'inv' ? '' : 'none';
-    document.getElementById('tab-codex').style.display = tab === 'codex' ? '' : 'none';
-    document.getElementById('tab-status').style.display = tab === 'status' ? '' : 'none';
+    ['inv', 'codex', 'status', 'help'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
+    });
     if (tab === 'inv') renderInventoryTab();
     else if (tab === 'codex') renderCodexTab();
-    else renderStatusTab();
+    else if (tab === 'status') renderStatusTab();
+    else if (tab === 'help') renderHelpTab();
   }
 
   function closeMenu() {
@@ -1163,6 +1339,35 @@
       `<div class="recipe-row"><span>MP</span><span>${player.mp} / ${player.maxMp}</span></div>` +
       `<div class="recipe-row"><span>攻擊力</span><span>${player.atk}</span></div>` +
       `<div class="recipe-row"><span>已收集配方</span><span>${codex.length} / ${RECIPES.length}</span></div>`;
+  }
+
+  function renderHelpTab() {
+    document.getElementById('tab-help').innerHTML =
+      `<h3 style="margin-bottom:10px;">操作說明</h3>` +
+      `<div style="font-size:13px;color:#cbd5e1;line-height:1.8;">` +
+      `<h4 style="color:#fbbf24;margin:8px 0 4px;">⌨️ 鍵盤</h4>` +
+      `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">WASD / 方向鍵</span></div>` +
+      `<div class="recipe-row"><span>近戰攻擊</span><span style="color:#38bdf8;">Z / Space</span></div>` +
+      `<div class="recipe-row"><span>施放選中技能</span><span style="color:#38bdf8;">X</span></div>` +
+      `<div class="recipe-row"><span>切換技能</span><span style="color:#38bdf8;">C</span></div>` +
+      `<div class="recipe-row"><span>直接施放技能</span><span style="color:#38bdf8;">1 / 2 / 3 / 4</span></div>` +
+      `<div class="recipe-row"><span>開啟選單</span><span style="color:#38bdf8;">I / Tab</span></div>` +
+      `<div class="recipe-row"><span>關閉選單</span><span style="color:#38bdf8;">Esc</span></div>` +
+      `<h4 style="color:#fbbf24;margin:12px 0 4px;">📱 觸控</h4>` +
+      `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">左側虛擬搖桿</span></div>` +
+      `<div class="recipe-row"><span>近戰攻擊</span><span style="color:#38bdf8;">⚔️ 按鈕</span></div>` +
+      `<div class="recipe-row"><span>射擊元素彈</span><span style="color:#38bdf8;">🔵 按鈕</span></div>` +
+      `<div class="recipe-row"><span>切換彈種</span><span style="color:#38bdf8;">點擊元素欄</span></div>` +
+      `<div class="recipe-row"><span>使用技能</span><span style="color:#38bdf8;">技1~技4 按鈕</span></div>` +
+      `<h4 style="color:#fbbf24;margin:12px 0 4px;">💡 遊戲提示</h4>` +
+      `<div style="color:#94a3b8;font-size:12px;line-height:1.7;">` +
+      `• 擊敗怪物會掉落元素字母，靠近自動拾取<br>` +
+      `• 收集足夠元素後，在背包頁面合成化學式<br>` +
+      `• 首次合成可解鎖技能並自動裝備<br>` +
+      `• 攻擊岩石有機率掉落元素<br>` +
+      `• 射擊會消耗背包中的元素<br>` +
+      `• 擊敗 Boss 完成本次探索<br>` +
+      `• 死亡會失去地圖進度，但保留等級與元素</div></div>`;
   }
 
   // === SKILL BUTTON HANDLERS (mobile) ===
@@ -1234,10 +1439,7 @@
   // === MOBILE ACTION BUTTONS ===
   document.getElementById('btn-atk').addEventListener('pointerdown', (e) => { e.preventDefault(); meleeAttack(); });
   document.getElementById('btn-shoot').addEventListener('pointerdown', (e) => { e.preventDefault(); shootProjectile(); });
-  // sk1-sk4 override the click handlers from Task 7 with pointerdown for responsiveness
-  ['sk1','sk2','sk3','sk4'].forEach((id, i) => {
-    document.getElementById(id).addEventListener('pointerdown', (e) => { e.preventDefault(); useSkill(i); });
-  });
+  // Skill buttons use click only: one activation for mouse, touch and keyboard.
 
   // === MINIMAP ===
   function drawMinimap() {

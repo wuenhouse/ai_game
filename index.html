@@ -103,6 +103,13 @@
       border: 1px solid rgba(56, 189, 248, 0.35);
       flex-shrink: 0;
     }
+    .hunter-icon::before {
+      content: "";
+      width: 40px;
+      height: 40px;
+      background: url("./assets/chem-arpg/hero.png") no-repeat 0 0;
+      image-rendering: pixelated;
+    }
     .game-card.purple .icon-box {
       background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.1));
       border: 1px solid rgba(168, 85, 247, 0.35);
@@ -154,6 +161,18 @@
       <h1>⚗️ 化學益智遊戲實驗室</h1>
       <p class="subtitle">支援手機直式單手觸控與電腦滑鼠鍵盤操作，點擊下方選擇遊戲開始實驗！</p>
     </header>
+
+    <a href="./chemistry_arpg.html" class="game-card">
+      <div class="card-top">
+        <div class="icon-box hunter-icon" aria-hidden="true"></div>
+        <div>
+          <div class="card-title">元素獵人</div>
+          <div class="card-tag">像素 ARPG × 元素合成</div>
+        </div>
+      </div>
+      <p class="card-desc">深入地下化學實驗室，用短杖近戰、發射六種元素彈，收集元素並合成技能。</p>
+      <div class="play-btn">開始探索 →</div>
+    </a>
 
     <a href="./chemistry_rubiks_cube.html" class="game-card">
       <div class="card-top">
