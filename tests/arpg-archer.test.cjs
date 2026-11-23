@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),a=require('node:assert/strict');
-let html=fs.readFileSync(require('node:path').join(__dirname,'../chemistry_arpg.html'),'utf8'), s=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+let html=fs.readFileSync(require('node:path').join(__dirname,'../chemistry_arpg.html'),'utf8'), s=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match=>match[1]).find(code=>code.includes('// === INIT ==='));
 new vm.Script(s);
 const listeners=(base={})=>Object.assign(base,{l:{},addEventListener(k,f){(this.l[k]??=[]).push(f)},emit(k,e={}){for(const f of this.l[k]??[])f(e)}});
 const cls=()=>({add(){},remove(){},contains(){return false},toggle(){}});
