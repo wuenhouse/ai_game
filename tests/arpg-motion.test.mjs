@@ -15,7 +15,7 @@ function setup(solid = () => false) {
     Array.from({ length: COLS }, (_, x) => solid(x, y, TILE) || TILE.FLOOR));
   const state = { mapX: 0, mapY: 0 };
   const calls = [];
-  const scope = { COLS, ROWS, TILE, state, rooms: [[{ tiles }]], castVisuals: [],
+  const scope = { COLS, ROWS, TILE, state, rooms: [[{ tiles }]], castVisuals: [], joyDirectionX: 0, joyDirectionY: 0, cancelBowCharge() {},
     transitionRoom: (x, y) => (calls.push([x, y]), true),
     playTone() {}, playerDeath() { state.dead = true; } };
   vm.runInNewContext(

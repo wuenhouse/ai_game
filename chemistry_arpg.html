@@ -37,7 +37,7 @@
     .elem-slot.active { border-color: #fbbf24; background: #332800; }
     /* Canvas area */
     .play-area { display: flex; flex: 1; min-height: 0; }
-    .stage { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+    .stage { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; touch-action: none; }
     .desktop-help { display: none; }
     @media (min-width: 760px) and (hover: hover) and (pointer: fine) {
       .desktop-help { display: block; flex: 0 0 clamp(200px, 20vw, 260px); margin: 8px 12px 8px 8px;
@@ -68,14 +68,14 @@
     /* Mobile controls */
     .controls { padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: #0f172a;
       border-top: 1px solid #1e293b; display: flex; flex-shrink: 0; align-items: flex-end; gap: 8px; z-index: 5; }
-    .ctrl-left { display: none; flex: 0 0 120px; align-items: center; justify-content: center; width: 120px; height: 120px; margin-bottom: 8px; position: relative; }
-    #joystick { width: 120px; height: 120px; touch-action: none; }
+    .move-hint { display: none; max-width: 120px; padding: 0 4px 12px; color: #94a3b8; font-size: 11px; pointer-events: none; }
+    #joystick { position: fixed; z-index: 12; width: 112px; height: 112px; transform: translate(-50%, -50%); pointer-events: none; }
     .ctrl-right { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 8px; align-items: center; margin-left: auto; }
     .abtn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #334155; background: #1e293b;
       color: #f8fafc; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center;
       touch-action: manipulation; }
     .abtn:active { background: #334155; }
-    .abtn.atk { border-color: #ef4444; background: #450a0a; }
+    .abtn.atk { border-color: #ef4444; background: #450a0a; touch-action: none; }
     .abtn.shoot { border-color: #3b82f6; background: #172554; }
     .skill-row { display: flex; width: 100%; max-width: 480px; gap: 4px; }
     .skill-btn { flex: 1; min-width: 0; padding: 4px; min-height: 44px; border-radius: 10px; border: 1px solid #334155; background: #1e293b;
@@ -230,7 +230,7 @@
     .title-back:hover { background: #164e63; }
     .title-back:focus-visible { outline: 3px solid #fde68a; outline-offset: 3px; }
     .title-screen::before, .title-screen::after { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
-    .title-screen::before { background: #09242d url('./assets/chem-arpg/title-adventure-desktop.png') center / cover no-repeat; }
+    .title-screen::before { background: #09242d url('./assets/chem-arpg/title-duo-desktop.svg') center / cover no-repeat; }
     .title-screen::after { background: linear-gradient(180deg, rgba(2,10,20,0.12), rgba(2,10,20,0.08) 55%, rgba(2,10,20,0.55)); }
     .title-content { width: min(100%, 470px); display: flex; flex-direction: column; align-items: center; gap: 18px;
       padding: 34px 30px; border: 1px solid rgba(125,211,252,0.28); border-radius: 28px;
@@ -246,12 +246,31 @@
     .title-secondary { display: flex; width: 100%; gap: 10px; }
     .title-secondary .sub-btn { flex: 1; min-height: 46px; padding: 10px; color: #d7edf4;
       background: rgba(15,39,54,0.65); border-color: rgba(125,211,252,0.3); }
+    .hero-choices { display:flex; width:100%; gap:10px; }
+    .hero-choices button { flex:1; padding:8px 10px; color:#e2e8f0; border:1px solid #476881; border-radius:12px; background:#102b38; font:inherit; font-weight:800; }
+    .hero-choices button[aria-pressed="true"] { color:#fff8cf; border-color:#fde68a; background:#204658; }
+    .hero-choices canvas { display:block; width:48px; height:54px; margin:0 auto 2px; image-rendering:pixelated; }
+    #hero-summary { font-size:12px; color:#b8dce0; text-align:center; min-height:2.7em; }
+    .archer-run :is(.skill-row, #btn-skill, #btn-shoot, .mage-guide) { display:none; }
+    .hero-card-lv { display:block; font-size:10px; color:#a5f3fc; margin-top:2px; }
+    .archer-run .mage-hud { display:none; }
+    .element-count { opacity:0.88; cursor:default; }
+    #btn-change-hero { margin-top:8px; min-height:38px; flex-shrink:0; }
+    .archer-guide { display:none; }
+    .archer-run .archer-guide { display:block; }
+    .archer-run .action-cluster { height:98px; }
+    .archer-run .action-cluster .atk { left:auto; right:0; color:#ecfeff; background:#164154; border-color:#67e8f9; }
+    .archer-run .action-cluster .atk[data-phase="1"] { background:#115e59; border-color:#99f6e4; }
+    .archer-run .action-cluster .atk[data-phase="2"] { background:#754216; border-color:#fde68a; }
     .title-content button:hover { filter: brightness(1.15); }
     .title-content button:focus-visible { outline: 3px solid #fde68a; outline-offset: 4px; }
     @media (max-width: 759px) {
-      .title-screen { justify-content: flex-start; padding: calc(80px + env(safe-area-inset-top)) 18px 24px; }
-      .title-screen::before { background-image: url('./assets/chem-arpg/title-adventure-mobile.png'); background-position: center; }
-      .title-content { gap: 14px; padding: 26px 22px; border-radius: 24px; }
+      .title-screen { justify-content: flex-start; padding: calc(54px + env(safe-area-inset-top)) 14px 18px; }
+      .title-screen::before { background-image: url('./assets/chem-arpg/title-duo-mobile.svg'); background-position: center; }
+      .title-content { gap: 7px; padding: 12px 14px; border-radius: 18px; }
+      .title-description { font-size: 12px; }
+      .hero-choices canvas { width: 34px; height: 38px; }
+      .hero-choices button { font-size: 13px; }
       .title-screen h1 { font-size: clamp(36px, 9vw, 46px); }
     }
     /* Toast */
@@ -260,13 +279,13 @@
       border-radius: 999px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none;
       transition: opacity 0.2s; z-index: 20; white-space: nowrap; box-shadow: 0 6px 15px rgba(16,185,129,0.4); }
     #toast.show { opacity: 1; }
-    /* Narrow screens and touch-capable devices need movement controls. */
-    @media (max-width: 759px), (any-pointer: coarse) { .ctrl-left { display: flex; } }
-    .touch-controls .ctrl-left { display: flex; }
-    @media (max-width: 360px) {
-      .ctrl-left { flex-basis: 100px; width: 100px; height: 100px; }
-      #joystick { width: 100px; height: 100px; }
+    /* Both the stage and the empty bottom strip accept movement touches. */
+    @media (max-width: 759px), (any-pointer: coarse) {
+      .controls { touch-action: none; }
+      .move-hint { display: block; }
     }
+    .touch-controls .controls { touch-action: none; }
+    .touch-controls .move-hint { display: block; }
   </style>
 </head>
 <body>
@@ -277,8 +296,13 @@
     <div class="title-content">
     <span class="title-kicker">收集 · 合成 · 探索</span>
     <h1>元素獵人</h1>
-    <p class="title-description">帶上你的元素魔杖，走進神祕遺跡。<br>收集元素、合成化合物，發現化學的魔法！</p>
+    <p class="title-description">選擇你的冒險夥伴，走進神祕遺跡。<br>收集元素、合成化合物，發現化學的魔法！</p>
     <div id="title-stats"></div>
+    <div class="hero-choices" role="group" aria-label="選擇角色">
+      <button type="button" id="pick-mage" aria-pressed="true"><canvas id="mage-preview" width="48" height="54" aria-hidden="true"></canvas>元素法師<span class="hero-card-lv" id="pick-mage-lv">Lv.1</span></button>
+      <button type="button" id="pick-archer" aria-pressed="false"><canvas id="archer-preview" width="48" height="54" aria-hidden="true"></canvas>馬尾弓手<span class="hero-card-lv" id="pick-archer-lv">Lv.1</span></button>
+    </div>
+    <p id="hero-summary"></p>
     <button class="start-btn" id="btn-start">出發探索 →</button>
     <div class="title-secondary">
       <button class="sub-btn" id="btn-title-codex">圖鑑</button>
@@ -291,21 +315,28 @@
     <div class="hud" id="hud">
       <span class="hud-label">HP</span>
       <div class="bar bar-hp"><div class="bar-fill" id="hp-fill" style="width:100%"></div></div>
-      <span class="hud-label">MP</span>
-      <div class="bar bar-mp"><div class="bar-fill" id="mp-fill" style="width:100%"></div></div>
-      <span>Lv.<span class="hud-val" id="hud-lv">1</span></span>
+      <span class="hud-label mage-hud">MP</span>
+      <div class="bar bar-mp mage-hud"><div class="bar-fill" id="mp-fill" style="width:100%"></div></div>
+      <span><span class="hud-label" id="hud-hero">元素法師</span> Lv.<span class="hud-val" id="hud-lv">1</span></span>
       <button class="menu-btn" id="btn-menu">選單</button>
     </div>
     <div class="elem-bar" id="elem-bar"></div>
     <div class="play-area">
     <div class="stage" id="stage">
       <div id="toast"></div>
-      <canvas id="game"></canvas>
+      <canvas id="game" aria-label="遊戲區：手機按住任意位置並拖曳即可移動"></canvas>
+      <canvas id="joystick" width="120" height="120" hidden aria-hidden="true"></canvas>
     </div>
     <aside class="desktop-help" aria-label="鍵盤操作說明">
       <h2>操作指南</h2>
       <p>探索開始後，就能用鍵盤操作。</p>
       <p class="help-start">先試試 W A S D，或方向鍵移動！</p>
+      <div class="archer-guide">
+        <p>WASD／方向鍵移動。按住 Z 或空白鍵集氣，放開射擊。可邊走邊集氣。</p>
+        <p>短按單箭。金色氣焰是三箭；燃起更大的亮金氣焰是大箭，可打碎岩石。弓手不能施放技能。</p>
+        <p id="bow-desktop-status"></p>
+      </div>
+      <div class="mage-guide">
       <dl>
         <div><dt>移動</dt><dd><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> ／ ↑ ↓ ← →</dd></div>
         <div><dt>普通攻擊</dt><dd><kbd>Z</kbd> ／ <kbd>Space</kbd></dd></div>
@@ -320,10 +351,11 @@
       <p>點上方元素欄切換彈種，發射會消耗元素。靠近掉落的元素即可拾取。</p>
       <h3>先選招，再施放</h3>
       <p>點下方技能格只會選招，按 X 才施放。首次在背包合成化合物，可解鎖技能；施放需要 MP。</p>
+      </div>
     </aside>
     </div>
     <div class="controls" id="mobile-controls">
-      <div class="ctrl-left"><canvas id="joystick" width="120" height="120" aria-label="移動搖桿：拖曳控制方向，放開停止"></canvas></div>
+      <span class="move-hint">按住畫面拖曳移動</span>
       <div class="ctrl-right">
         <div class="skill-row">
           <button class="skill-btn" id="sk1">技1</button>
@@ -333,7 +365,8 @@
         </div>
         <div class="action-cluster" role="group" aria-label="戰鬥操作">
           <button type="button" class="abtn atk" id="btn-atk" aria-label="普通攻擊">
-            <span aria-hidden="true">⚔️</span><span class="action-label">普攻</span>
+            <span id="attack-icon" aria-hidden="true">⚔️</span><span class="action-label">普攻</span>
+            <span class="action-detail" id="bow-touch-status" hidden></span>
           </button>
           <button type="button" class="abtn cast" id="btn-skill" aria-label="施放選取技能">
             <span class="action-label">技能</span><span class="action-detail">先合成解鎖</span>
@@ -361,6 +394,7 @@
     <div id="tab-status" style="display:none"></div>
     <div id="tab-help" style="display:none"></div>
     </div>
+    <button type="button" class="menu-btn" id="btn-change-hero" hidden>結束本次探索，返回選角</button>
     <button class="menu-btn" id="btn-close-menu" style="width:100%;margin-top:12px;">關閉</button>
   </div>
 </div>
@@ -581,7 +615,7 @@
     state.mapY = ny;
     generateRoom(nx, ny);
     // Clear room-local effects
-    projectiles = [];
+    projectiles = []; bowFan = null;
     traps = [];
     acidZones = [];
     smokeTimer = 0;
@@ -601,6 +635,22 @@
     atkTimer: 0, attackDir: 'down', shotTimer: 0, invincible: 0, shieldTimer: 0,
     walkPhase: 0, walking: false, hurtTimer: 0, hurtDir: 'down', knockback: null, impactOrigin: null };
 
+  const MELEE_BUFFER_SECONDS = 0.10;
+  let meleeQueued = false;
+  let chosenHero = 'mage', activeHero = 'mage';
+  const HERO_INFO = { mage:{name:'元素法師',weapon:'元素魔杖'}, archer:{name:'馬尾弓手',weapon:'弓箭'} };
+  let bowInput = null, bowStartedAt = 0;
+  const BOW_FIRST_MS = 350, BOW_SECOND_MS = 900;
+  const BOW_FAN_FLASH = 0.22;
+  let bowFan = null;
+  // Range uses world tiles, not viewport pixels; recovery is game time.
+  const BOW_SHOTS = [
+    { offsets:[0], range:6, speed:11, damage:0.85, recovery:0.14 },
+    { offsets:[-0.24,0,0.24], range:5.5, speed:11, damage:0.92, recovery:0.22 },
+    { offsets:[0], range:7.5, speed:13, damage:2.05, recovery:0.32 }
+  ];
+  const isArcher = () => activeHero === 'archer';
+
   const keys = { up: false, down: false, left: false, right: false, attack: false, shoot: false };
 
   function initPlayer() {
@@ -609,6 +659,8 @@
     player.hp = player.maxHp;
     player.mp = player.maxMp;
     player.atkTimer = 0;
+    cancelBowCharge();
+    meleeQueued = false;
     player.attackDir = player.dir;
     player.shotTimer = 0;
     castVisuals = [];
@@ -678,11 +730,19 @@
       return;
     }
 
+    if (isArcher() && player.atkTimer > 0) {
+      player.walking = false;
+      return;
+    }
     let dx = 0, dy = 0;
     if (keys.up) { dy = -1; player.dir = 'up'; }
     if (keys.down) { dy = 1; player.dir = 'down'; }
     if (keys.left) { dx = -1; player.dir = 'left'; }
     if (keys.right) { dx = 1; player.dir = 'right'; }
+    if (joyDirectionX || joyDirectionY) {
+      dx = joyDirectionX; dy = joyDirectionY;
+      player.dir = joyFacing();
+    }
     if (dx && dy) { dx *= 0.707; dy *= 0.707; }
     const spd = player.speed * dt;
     const distance = movePlayerBy(dx * spd, dy * spd);
@@ -711,6 +771,103 @@
   const AMMO_FRAME = { H: 1, O: 2, C: 3, Na: 4, Cl: 5, Ca: 6 };
   const HERO_VISUAL_SCALE = 1.18;
 
+  function drawArcherSprite(ctx, x, y, size, dir, pose, frame, moving) {
+    const s = size / 34, back = dir === 'up', side = dir === 'left' || dir === 'right';
+    const lean = pose === 'hurt' ? -2 : 0;
+    const stride = moving && pose !== 'hurt' ? [2,0,-2,0][frame & 3] : 0;
+    const bob = moving && pose !== 'hurt' ? frame & 1 : 0;
+    const aim = pose === 'charge' || pose === 'release';
+    const C = {e:'#101626', n:'#202840', b:'#40547a', c:'#ded9c2', q:'#a7ada5',
+      g:'#c38940', l:'#ffe5a0', t:'#4adade', h:'#3d2941', p:'#6f405d', r:'#a76c7c', f:'#ffc6a2', d:'#815846'};
+    ctx.save();
+    const tile = (u,v,w,h,col) => {
+      if (dir === 'left') u = -u-w;
+      const l = Math.round(x+u*s), t = Math.round(y+v*s);
+      ctx.fillStyle = C[col];
+      ctx.fillRect(l,t,Math.max(1,Math.round(x+(u+w)*s)-l),Math.max(1,Math.round(y+(v+h)*s)-t));
+    };
+    const rect = (u,v,w,h,col) => tile(u+lean,v+bob,w,h,col);
+    for (const [a,k] of [[-7,-stride],[1,stride]]) {
+      tile(a+(side?k:0),-9-Math.max(0,k),6,9,'e');
+      tile(a+1+(side?k:0),-8-Math.max(0,k),4,5,'n');
+      tile(a+1+(side?k:0),-4-Math.max(0,k),5,3,'d');
+    }
+    // High ponytail and goggles share the mage's adventure palette.
+    const tail = side ? -15 : 5;
+    rect(tail,-29,9,8,'e'); rect(tail+1,-28,7,6,'h'); rect(tail+2,-28,5,2,'p');
+    rect(tail+(side?-1:3),-23-stride/2,6,6,'e'); rect(tail+(side?0:4),-23-stride/2,4,5,'p');
+    rect(tail+4,-26,3,2,'t');
+    rect(-7,-21,14,14,'e'); rect(-8,-19,16,6,'e'); rect(-6,-20,12,12,'c');
+    rect(-6,-12,5,4,'q'); rect(-3,-20,6,11,'n'); rect(-5,-12,10,2,'d');
+    if (back) { rect(-4,-20,8,10,'b'); rect(-1,-17,3,4,'t'); }
+    else { rect(-2,-14,4,2,'g'); rect(3,-14,2,3,'t'); }
+    rect(-6,-34,12,2,'e'); rect(-8,-32,16,3,'e'); rect(-9,-29,18,6,'e'); rect(-7,-23,14,3,'e');
+    rect(-6,-32,12,3,'p'); rect(-7,-30,14,7,'h'); rect(-5,-31,6,1,'r');
+    if (!back) {
+      rect(side?-1:-5,-27,side?8:10,6,'f');
+      for (const x of side?[0]:[-6,1]) {
+        rect(x,-29,5,3,'g'); rect(x+1,-29,3,2,'t'); rect(x+1,-29,2,1,'l');
+        rect(x+2,-24,2,pose==='hurt'?1:2,'e');
+      }
+    } else { rect(-7,-26,14,2,'p'); }
+    rect(-9,-19,4,6,'e'); rect(-8,-18,3,4,'q');
+    rect(5,-19,aim?7:4,4,'e'); rect(6,-18,aim?6:3,3,'c');
+    rect(aim?10:7,-17,3,2,'f');
+    const bx=(side?10:8)+(pose==='release'?2:0), by=aim?-19:-16;
+    for (const [u,v,w,h] of [[0,-8,3,2],[2,-7,3,3],[4,-4,3,8],[2,4,3,3],[0,7,3,2]]) {
+      rect(bx+u,by+v,w,h,'e'); rect(bx+u,by+v,Math.max(1,w-1),Math.max(1,h-1),'g');
+    }
+    const pull = pose==='charge'?-5:1;
+    for(let k=-7;k<=7;k++) rect(bx+Math.round(pull*(1-Math.abs(k)/7)),by+k,1,1,'l');
+    if (aim) {
+      if (side) { rect(bx+pull,by-1,11-pull,1,'t'); rect(bx+9,by-2,3,3,'l'); }
+      else rect(bx+2,back?by-10:by,2,10,'t');
+    }
+    ctx.restore();
+  }
+
+  function drawArcherAura(x, feet, size, stage, ms) {
+    // Rising flame tongues sit behind the sprite, not on her face or coat.
+    const strong = stage === 2, u = size / 120, time = ms / 1000;
+    const height = size * (strong ? 0.92 : 0.70), width = size * (strong ? 0.48 : 0.37);
+    ctx.save();
+    ctx.globalAlpha = 1;
+    const flame = (offset, base, peak, sway, outer, inner) => {
+      const bx = x + offset, by = feet - 2*u;
+      ctx.fillStyle = outer;
+      ctx.beginPath(); ctx.moveTo(bx-base,by);
+      ctx.quadraticCurveTo(bx-base*1.5,by-peak*0.42,bx+sway,by-peak);
+      ctx.quadraticCurveTo(bx+sway*0.5+base*0.12,by-peak*0.52,bx+base,by-peak*0.32);
+      ctx.quadraticCurveTo(bx+base*1.18,by-peak*0.13,bx+base,by);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = inner;
+      ctx.beginPath(); ctx.moveTo(bx-base*0.48,by);
+      ctx.quadraticCurveTo(bx-base*0.82,by-peak*0.33,bx+sway*0.55,by-peak*0.77);
+      ctx.quadraticCurveTo(bx+base*0.14,by-peak*0.29,bx+base*0.55,by);
+      ctx.closePath(); ctx.fill();
+    };
+    ctx.fillStyle = strong ? '#fba42456' : '#fbbd3d27';
+    ctx.beginPath(); ctx.ellipse(x, feet - 2*u, width, size*0.09, 0, 0, Math.PI*2); ctx.fill();
+    const points = strong ? [-0.75,-0.42,0.05,0.47,0.78] : [-0.7,-0.23,0.35,0.71];
+    points.forEach((v,n) => {
+      const lift = 0.68 + (1-Math.abs(v))*0.39 + Math.sin(time*11+n*2.1)*0.105;
+      const sway = width * (Math.sin(time*7+n)*0.14 + v*0.36);
+      flame(v*width, width*(strong?0.29:0.25), height*lift, sway,
+        strong?'#ff982ebc':'#ec95258a', strong?'#fff2a7e8':'#ffda68c8');
+    });
+    for (let n=0; n<(strong?9:4); n++) {
+      const phase = (time*(strong?1.65:1.2)+n*0.219)%1;
+      const sign = n%2 ? 1 : -1;
+      const px = x + sign*width*(0.56+(n%3)*0.19+phase*0.14);
+      const py = feet - size*(0.12 + phase*(strong?0.91:0.69));
+      const dot = Math.max(1, u*(strong?4:3)*(1-phase*0.55));
+      ctx.globalAlpha = 0.88-phase*0.48;
+      ctx.fillStyle = n%3===0?'#fff6bf':'#ffba42';
+      ctx.fillRect(Math.round(px),Math.round(py),dot, dot*(strong?1.75:1.35));
+    }
+    ctx.restore();
+  }
+
   function drawPlayer() {
     const px = Math.round(player.x * tileSize);
     const py = Math.round(player.y * tileSize);
@@ -728,6 +885,24 @@
     const footY = py + Math.round(8 * scale);
     const left = px - Math.round(size / 2);
     const top = footY - Math.round(size * 0.85);
+    if (isArcher()) {
+      const elapsed = bowInput === null ? 0 : performance.now() - bowStartedAt;
+      const stage = bowStage(elapsed);
+      const pose = hurt ? 'hurt' : player.atkTimer > 0 ? 'release'
+        : bowInput !== null ? 'charge' : player.walking ? 'walk' : 'idle';
+      const archerDir = hurt ? player.hurtDir : pose === 'release' ? player.attackDir : player.dir;
+      const gait = Math.floor(player.walkPhase) & 3;
+      const row = pose === 'hurt' ? 5 : pose === 'charge' ? 1 : pose === 'release' ? 2
+        : pose === 'walk' ? [3, 0, 4, 0][gait] : 0;
+      const bob = pose === 'charge' && player.walking && (gait & 1) ? Math.max(1, Math.round(size / 90)) : 0;
+      if (stage > 0 && (pose === 'charge' || pose === 'hurt')) drawArcherAura(px, footY - bob, size, stage, elapsed);
+      if (!drawArt(archerArt, row * 4 + DIR_FRAME[archerDir], left, top - bob, size, size)) {
+        drawArcherSprite(ctx, px, footY, Math.round(size * 0.70), archerDir,
+          pose, gait, player.walking);
+      }
+      ctx.restore();
+      return;
+    }
     const column = DIR_FRAME[dir];
     const spriteFrame = frame * 4 + column;
     const drawn = (hurt && drawArt(heroHurtArt, column, left, top, size, size))
@@ -775,6 +950,7 @@
   const heroArt = loadArt('hero.png', 40, 4, 3);
   const heroHiResArt = loadArt('hero-hd.png', 120, 4, 3);
   const heroWalkArt = loadArt('hero-walk.png', 120, 4, 4);
+  const archerArt = loadArt('archer-hd.svg', 120, 4, 6);
   const heroHurtArt = loadArt('hero-hurt.png', 120, 4, 1);
   const combatArt = loadArt('combat.png', 48, 4, 3);
   const monsterAtlas = new Image();
@@ -836,6 +1012,7 @@
   let selectedAmmo = 'H';
 
   function cycleSkill() {
+    if (isArcher()) return;
     if (state.screen !== 'play' || state.paused) return;
     for (let step = 1; step <= equippedSkills.length; step++) {
       const next = (selectedSkillSlot + step) % equippedSkills.length;
@@ -890,8 +1067,73 @@
   // === PROJECTILES ===
   let projectiles = [];
 
+  function bowStage(ms) {
+    return ms >= BOW_SECOND_MS ? 2 : ms >= BOW_FIRST_MS ? 1 : 0;
+  }
+
+  function startBowCharge(input) {
+    if (!isArcher() || state.screen !== 'play' || state.paused || document.hidden ||
+        bowInput !== null || player.atkTimer > 0) return false;
+    bowInput = input;
+    bowStartedAt = performance.now();
+    return true;
+  }
+
+  function cancelBowCharge(input) {
+    if (input === undefined || bowInput === input) {
+      bowInput = null;
+      bowStartedAt = 0;
+    }
+  }
+
+  function finishBowCharge(input) {
+    if (bowInput !== input) return;
+    const stage = bowStage(performance.now() - bowStartedAt);
+    cancelBowCharge(input);
+    if (!isArcher() || state.screen !== 'play' || state.paused || document.hidden || player.atkTimer > 0) return;
+    const shot = BOW_SHOTS[stage], facing = DIR_ANGLE[player.dir];
+    const volleyHits = new Set();
+    if (stage === 1) bowFan = {x:player.x, y:player.y, angle:facing, remaining:BOW_FAN_FLASH};
+    player.attackDir = player.dir;
+    player.atkTimer = shot.recovery;
+    for (const offset of shot.offsets) {
+      const angle = facing + offset;
+      projectiles.push({kind:'arrow', x:player.x, y:player.y, dx:Math.cos(angle), dy:Math.sin(angle),
+        speed:shot.speed, remaining:shot.range, dmg:player.atk * shot.damage, stage, volleyHits});
+    }
+    playTone(stage === 2 ? 240 : 530, 'triangle', 0.09);
+  }
+
+  function stepArrow(p, room, dt) {
+    const distance = Math.min(p.remaining, p.speed * dt);
+    const samples = Math.max(1, Math.ceil(distance / 0.14));
+    for (let i = 0; i < samples; i++) {
+      p.x += p.dx * distance / samples;
+      p.y += p.dy * distance / samples;
+      const col = Math.floor(p.x), row = Math.floor(p.y);
+      if (isSolid(col, row)) {
+        if (p.stage === 2 && breakRock(room, col, row)) playTone(180, 'triangle', 0.12);
+        return false; // Even a rock-breaking arrow stops at the impact tile.
+      }
+      const radius = p.stage === 2 ? 0.72 : 0.48;
+      for (let j = room.monsters.length - 1; j >= 0; j--) {
+        const m = room.monsters[j];
+        if (Math.hypot(m.x - p.x, m.y - p.y) >= radius) continue;
+        if (!p.volleyHits.has(m)) {
+          p.volleyHits.add(m);
+          hitMonster(m, p.dmg, p.dx, p.dy, p.stage === 2 ? 0.5 : 0.18);
+          if (m.hp <= 0) killMonster(room, j);
+          else playTone(370, 'triangle', 0.04);
+        }
+        return false;
+      }
+    }
+    p.remaining -= distance;
+    return p.remaining > 0.000001;
+  }
+
   function shootProjectile() {
-    if (state.screen !== 'play' || state.paused) return;
+    if (isArcher() || state.screen !== 'play' || state.paused) return;
     if (inventory[selectedAmmo] <= 0) {
       showToast(`${selectedAmmo} 彈藥不足，點擊元素欄切換彈藥`);
       return;
@@ -911,9 +1153,15 @@
   }
 
   function updateProjectiles(dt) {
+    if (bowFan && (bowFan.remaining -= dt) <= 0) bowFan = null;
     const room = rooms[state.mapY][state.mapX];
     for (let i = projectiles.length - 1; i >= 0; i--) {
       const p = projectiles[i];
+      if (p.kind === 'arrow') {
+        if (!stepArrow(p, room, dt)) projectiles.splice(i, 1);
+        if (state.screen !== 'play') break;
+        continue;
+      }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.life -= dt;
@@ -946,9 +1194,59 @@
     }
   }
 
+  function drawBowFan() {
+    if (!bowFan) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, bowFan.remaining / 0.12);
+    ctx.lineCap = 'round';
+    for (const offset of BOW_SHOTS[1].offsets) {
+      const angle = bowFan.angle + offset;
+      const dx = Math.cos(angle), dy = Math.sin(angle);
+      let reach = 0;
+      for (let step = 1; step <= 14; step++) {
+        const d = step * 0.1;
+        if (isSolid(Math.floor(bowFan.x + dx*d), Math.floor(bowFan.y + dy*d))) break;
+        reach = d;
+      }
+      if (reach <= 0.45) continue;
+      for (const [color, width] of [['#0a2437', 0.105], ['#70edff', 0.055]]) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = Math.max(width === 0.105 ? 3 : 1.5, tileSize * width);
+        ctx.beginPath();
+        ctx.moveTo((bowFan.x + dx*0.43)*tileSize, (bowFan.y + dy*0.43)*tileSize);
+        ctx.lineTo((bowFan.x + dx*reach)*tileSize, (bowFan.y + dy*reach)*tileSize);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
   function drawProjectiles() {
     projectiles.forEach(p => {
       const px = p.x * tileSize, py = p.y * tileSize;
+      if (p.kind === 'arrow') {
+        const size = tileSize * (p.stage === 2 ? 0.92 : p.stage === 1 ? 0.69 : 0.52);
+        const width = size * (p.stage === 2 ? 0.25 : p.stage === 1 ? 0.24 : 0.18);
+        ctx.save();
+        ctx.translate(px, py); ctx.rotate(Math.atan2(p.dy, p.dx));
+        if (p.stage === 1) {
+          const traveled = (BOW_SHOTS[1].range - p.remaining) * tileSize;
+          const tail = Math.min(tileSize * 0.92, Math.max(0, traveled));
+          if (tail > 1) {
+            ctx.fillStyle = '#5eeaff9e';
+            ctx.beginPath(); ctx.moveTo(-tail, 0); ctx.lineTo(0, -width * 0.48);
+            ctx.lineTo(0, width * 0.48); ctx.closePath(); ctx.fill();
+          }
+          ctx.fillStyle = '#10263a';
+          ctx.fillRect(-size * 0.56, -width * 0.46, size, width * 0.92);
+        }
+        ctx.fillStyle = p.stage === 2 ? '#fde68a' : p.stage === 1 ? '#dcfbff' : '#a5f3fc';
+        ctx.fillRect(-size * 0.56, -width * 0.24, size, Math.max(p.stage === 1 ? 1.7 : 0, width * 0.48));
+        ctx.beginPath(); ctx.moveTo(size * 0.52, 0);
+        ctx.lineTo(size * 0.14, -width); ctx.lineTo(size * 0.14, width); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        return;
+      }
       // Boss fire retains its labelled shape so hostile shots stay distinguishable.
       if (p.fromPlayer && drawCombat(AMMO_FRAME[p.element.sym], px, py,
         tileSize * 1.13, Math.atan2(p.vy, p.vx))) return;
@@ -962,10 +1260,24 @@
   }
 
   // === HUD UPDATE ===
+  function updateBowHUD() {
+    const phase = bowInput === null ? -1 : bowStage(performance.now() - bowStartedAt);
+    const label = phase === 2 ? '第二段・大箭' : phase === 1 ? '第一段・三箭'
+      : phase === 0 ? '集氣中' : player.atkTimer > 0 ? '硬直' : '長按集氣';
+    const status = document.getElementById('bow-touch-status');
+    if (status.textContent !== label) {
+      status.textContent = label;
+      document.getElementById('btn-atk').setAttribute('data-phase', String(phase));
+      document.getElementById('bow-desktop-status').textContent = label;
+    }
+  }
+
   function updateHUD() {
     document.getElementById('hp-fill').style.width = `${(player.hp / player.maxHp) * 100}%`;
     document.getElementById('mp-fill').style.width = `${(player.mp / player.maxMp) * 100}%`;
     document.getElementById('hud-lv').textContent = player.level;
+    const heroLabel = document.getElementById('hud-hero');
+    if (heroLabel.textContent !== HERO_INFO[activeHero].name) heroLabel.textContent = HERO_INFO[activeHero].name;
     equippedSkills.forEach((id, i) => {
       const btn = document.getElementById('sk' + (i + 1));
       const recipe = RECIPES.find(r => r.id === id);
@@ -975,6 +1287,10 @@
       btn.title = recipe ? `選擇${recipe.name}，再按技能圓鈕施放｜消耗 ${recipe.mp} MP｜${recipe.desc}` : '在選單的背包中合成化合物以解鎖技能';
       btn.style.color = recipe && player.mp >= recipe.mp ? '#38bdf8' : '#94a3b8';
     });
+    if (isArcher()) {
+      updateBowHUD();
+      return;
+    }
     const selected = RECIPES.find(r => r.id === equippedSkills[selectedSkillSlot]);
     const castButton = document.getElementById('btn-skill');
     castButton.querySelector('.action-detail').textContent = selected ? `${selected.formula} · ${selected.mp} MP` : '先合成解鎖';
@@ -986,6 +1302,10 @@
 
   function updateElemBar() {
     const bar = document.getElementById('elem-bar');
+    if (isArcher()) {
+      bar.innerHTML = ELEMENTS.map(e => `<span class="elem-slot element-count"><span style="color:${e.color}">${e.sym}</span>:${inventory[e.sym] || 0}</span>`).join('');
+      return;
+    }
     bar.innerHTML = ELEMENTS.map(e =>
       `<button type="button" class="elem-slot ${e.sym === selectedAmmo ? 'active' : ''}" data-sym="${e.sym}">` +
       `<span style="color:${e.color}">${e.sym}</span>:${inventory[e.sym] || 0}</button>`
@@ -1258,8 +1578,18 @@
   }
 
   // === MELEE ATTACK ===
+  function requestMobileMelee() {
+    if (state.screen !== 'play' || state.paused || document.hidden) return;
+    if (player.atkTimer <= 0) {
+      meleeQueued = false;
+      meleeAttack();
+    } else if (player.atkTimer <= MELEE_BUFFER_SECONDS) {
+      meleeQueued = true;
+    }
+  }
+
   function meleeAttack() {
-    if (player.atkTimer > 0) return;
+    if (isArcher() || player.atkTimer > 0) return;
     player.atkTimer = 0.3;
     player.attackDir = player.dir;
     playTone(300, 'square', 0.06);
@@ -1287,13 +1617,17 @@
     const dyDir = { up: -1, down: 1, left: 0, right: 0 };
     const rc = Math.floor(player.x + dxDir[player.dir]);
     const rr = Math.floor(player.y + dyDir[player.dir]);
-    if (rc >= 0 && rc < COLS && rr >= 0 && rr < ROWS && room.tiles[rr][rc] === TILE.ROCK) {
-      room.tiles[rr][rc] = TILE.FLOOR;
-      if (Math.random() < 0.3) {
-        const el = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
-        room.drops.push({ x: rc + 0.5, y: rr + 0.5, sym: el.sym, life: 15 });
-      }
+    breakRock(room, rc, rr);
+  }
+
+  function breakRock(room, col, row) {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS || room.tiles[row][col] !== TILE.ROCK) return false;
+    room.tiles[row][col] = TILE.FLOOR;
+    if (Math.random() < 0.3) {
+      const el = ELEMENTS[Math.floor(Math.random() * ELEMENTS.length)];
+      room.drops.push({ x: col + 0.5, y: row + 0.5, sym: el.sym, life: 15 });
     }
+    return true;
   }
 
   // === EXP & LEVEL UP ===
@@ -1316,6 +1650,7 @@
   // === PLAYER DEATH ===
   function playerDeath() {
     state.screen = 'dead';
+    resetTouchInput();
     window._stats.deaths = (window._stats.deaths || 0) + 1;
     saveGame();
     document.getElementById('death-modal').classList.add('open');
@@ -1360,6 +1695,10 @@
 
   function update(dt) {
     updatePlayer(dt);
+    if (meleeQueued && player.atkTimer <= 0) {
+      meleeQueued = false;
+      if (state.screen === 'play' && !state.paused && !document.hidden) meleeAttack();
+    }
     if (keys.attack) { meleeAttack(); keys.attack = false; }
     if (keys.shoot) { shootProjectile(); keys.shoot = false; }
     updateMonsters(dt);
@@ -1391,6 +1730,7 @@
       drawCastVisuals();
       drawProjectiles();
       drawPlayer();
+      drawBowFan();
       ctx.restore();
       drawMinimap();
     }
@@ -1407,6 +1747,11 @@
   window.addEventListener('keydown', (e) => {
     if (state.screen !== 'play' || state.paused) return;
     const actionKey = gameKey(e);
+    if (isArcher() && ['z', 'Z', ' '].includes(actionKey)) {
+      e.preventDefault();
+      if (!e.repeat) startBowCharge('key:' + (e.code || actionKey));
+      return;
+    }
     if (['w', 'W', 'a', 'A', 's', 'S', 'd', 'D',
       'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(actionKey)) e.preventDefault();
     if (['c', 'x', 'f', 'F', '1', '2', '3', '4', ' '].includes(actionKey)) {
@@ -1434,13 +1779,24 @@
       case 'ArrowDown': case 's': case 'S': keys.down = false; break;
       case 'ArrowLeft': case 'a': case 'A': keys.left = false; break;
       case 'ArrowRight': case 'd': case 'D': keys.right = false; break;
-      case 'z': case 'Z': case ' ': keys.attack = false; break;
+      case 'z': case 'Z': case ' ':
+        keys.attack = false;
+        if (isArcher()) finishBowCharge('key:' + (e.code || gameKey(e)));
+        break;
       case 'f': case 'F': keys.shoot = false; break;
     }
   });
 
   // === BUTTON HANDLERS ===
   document.getElementById('btn-start').addEventListener('click', () => {
+    activeHero = chosenHero;
+    const archer = isArcher();
+    document.getElementById('game-screen').classList.toggle('archer-run', archer);
+    const attack = document.getElementById('btn-atk');
+    attack.querySelector('.action-label').textContent = archer ? '弓箭' : '普攻';
+    document.getElementById('attack-icon').textContent = archer ? '🏹' : '⚔️';
+    document.getElementById('bow-touch-status').hidden = !archer;
+    attack.setAttribute('aria-label', archer ? '弓箭：按住集氣，放開射擊' : '普通攻擊');
     state.screen = 'play';
     state.mapX = 2; state.mapY = 2;
     generateMap();
@@ -1455,45 +1811,80 @@
 
   // === SAVE / LOAD ===
   const SAVE_KEY = 'chem_arpg_save';
-  if (!window._stats) window._stats = { totalKills: 0, totalSyntheses: 0, deaths: 0 };
+  const ARCHER_SAVE_KEY = 'chem_arpg_archer_progress_v1';
+  const HERO_PREF_KEY = 'chem_arpg_hero_choice_v1';
+  const baseProgress = () => ({
+    player:{level:1, exp:0, maxHp:50, maxMp:20, atk:5, currentHp:50, currentMp:20},
+    stats:{totalKills:0, deaths:0}
+  });
+  const heroProgress = {mage:baseProgress(), archer:baseProgress()};
+  if (!window._stats) window._stats = {totalKills:0, totalSyntheses:0, deaths:0};
+
+  function applyHeroProgress(profile) {
+    const p = profile.player;
+    for (const key of ['level','exp','maxHp','maxMp','atk']) player[key] = p[key];
+    player.hp = p.currentHp;
+    player.mp = p.currentMp;
+    window._stats = {...profile.stats, totalSyntheses:codex.length};
+  }
+
+  function storeActiveProgress() {
+    heroProgress[activeHero] = {
+      player:{level:player.level, exp:player.exp, maxHp:player.maxHp, maxMp:player.maxMp,
+        atk:player.atk, currentHp:player.hp, currentMp:player.mp},
+      stats:{totalKills:window._stats.totalKills || 0, deaths:window._stats.deaths || 0}
+    };
+  }
+
+  function readProgress(data) {
+    const profile = baseProgress(), source = data?.player || {};
+    for (const key of ['level','exp','maxHp','maxMp','atk']) {
+      if (Number.isFinite(source[key]) && (key === 'exp' ? source[key] >= 0 : source[key] > 0)) {
+        profile.player[key] = source[key];
+      }
+    }
+    for (const [key,max] of [['currentHp','maxHp'],['currentMp','maxMp']]) {
+      profile.player[key] = Number.isFinite(source[key])
+        ? Math.max(0, Math.min(source[key], profile.player[max])) : profile.player[max];
+    }
+    for (const key of ['totalKills','deaths']) {
+      if (Number.isFinite(data?.stats?.[key]) && data.stats[key] >= 0) profile.stats[key] = data.stats[key];
+    }
+    return profile;
+  }
 
   function saveGame() {
+    storeActiveProgress();
     const data = {
-      player: { level: player.level, exp: player.exp, maxHp: player.maxHp, maxMp: player.maxMp,
-        atk: player.atk, currentHp: player.hp, currentMp: player.mp },
-      inventory: { ...inventory },
-      codex: [...codex],
-      unlockedSkills: [...unlockedSkills],
-      equippedSkills: [...equippedSkills],
+      player:heroProgress.mage.player,
+      inventory:{...inventory},
+      codex:[...codex], unlockedSkills:[...unlockedSkills], equippedSkills:[...equippedSkills],
       selectedAmmo,
-      stats: { totalKills: window._stats.totalKills || 0,
-               totalSyntheses: codex.length,
-               deaths: window._stats.deaths || 0 }
+      stats:{...heroProgress.mage.stats, totalSyntheses:codex.length}
     };
+    // Keep the legacy slot intact for the mage and shared collections.
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    if (isArcher()) localStorage.setItem(ARCHER_SAVE_KEY, JSON.stringify(heroProgress.archer));
   }
 
   function loadGame() {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return;
     try {
-      const data = JSON.parse(raw);
-      if (data.player) {
-        player.level = data.player.level || 1;
-        player.exp   = data.player.exp   || 0;
-        player.maxHp = data.player.maxHp || 50;
-        player.maxMp = data.player.maxMp || 20;
-        player.atk   = data.player.atk   || 5;
-        player.hp    = data.player.currentHp || player.maxHp;
-        player.mp    = data.player.currentMp || player.maxMp;
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        heroProgress.mage = readProgress(data);
+        if (data.inventory) Object.assign(inventory, data.inventory);
+        if (Array.isArray(data.codex)) codex = data.codex;
+        if (Array.isArray(data.unlockedSkills)) unlockedSkills = data.unlockedSkills;
+        if (Array.isArray(data.equippedSkills)) equippedSkills = data.equippedSkills;
+        if (data.selectedAmmo) selectedAmmo = data.selectedAmmo;
       }
-      if (data.inventory)     Object.assign(inventory, data.inventory);
-      if (data.codex)         codex          = data.codex;
-      if (data.unlockedSkills) unlockedSkills = data.unlockedSkills;
-      if (data.equippedSkills) equippedSkills = data.equippedSkills;
-      if (data.selectedAmmo)  selectedAmmo   = data.selectedAmmo;
-      if (data.stats)         window._stats  = data.stats;
-    } catch (e) { /* corrupted save, ignore */ }
+    } catch { /* malformed legacy data must not prevent archer loading */ }
+    try {
+      const raw = localStorage.getItem(ARCHER_SAVE_KEY);
+      if (raw) heroProgress.archer = readProgress(JSON.parse(raw));
+    } catch { /* ignore malformed archer data without touching the legacy slot */ }
+    applyHeroProgress(heroProgress[activeHero]);
   }
 
   // === SKILLS ===
@@ -1532,6 +1923,7 @@
   }
 
   function useSkill(slotIdx) {
+    if (isArcher()) return;
     if (state.screen !== 'play' || state.paused) return;
     const skillId = equippedSkills[slotIdx];
     if (!skillId) {
@@ -1675,6 +2067,7 @@
   // === BOSS VICTORY & RETURN TO TITLE ===
   function bossVictory() {
     state.screen = 'victory';
+    resetTouchInput();
     const totalElems = Object.values(inventory).reduce((a, b) => a + b, 0);
     const summary = `獲得經驗值 100，收集了 ${totalElems} 個元素！`;
     document.getElementById('victory-summary').textContent = summary;
@@ -1683,11 +2076,14 @@
   }
 
   function returnToTitle() {
+    closeMenu();
     state.screen = 'title';
+    Object.keys(keys).forEach(key => { keys[key] = false; });
+    resetTouchInput();
     resetPlayerMotion();
     player.hp = player.maxHp;
     player.mp = player.maxMp;
-    projectiles = []; traps = []; acidZones = []; smokeTimer = 0;
+    projectiles = []; bowFan = null; traps = []; acidZones = []; smokeTimer = 0;
     document.getElementById('death-modal').classList.remove('open');
     document.getElementById('victory-modal').classList.remove('open');
     document.getElementById('game-screen').style.display = 'none';
@@ -1745,6 +2141,8 @@
 
   function openMenu(tab = 'inv') {
     state.paused = true;
+    resetTouchInput();
+    document.getElementById('btn-change-hero').hidden = state.screen !== 'play';
     const modal = document.getElementById('menu-modal');
     modal.classList.add('open');
     document.querySelectorAll('.tab-btn').forEach(b => {
@@ -1814,7 +2212,10 @@
   // === INVENTORY TAB ===
   function renderInventoryTab() {
     const el = document.getElementById('tab-inv');
-    let html = '<h3 style="margin-bottom:10px;">元素庫存</h3>';
+    let html = '<h3 style="margin-bottom:10px;">共用元素背包</h3>';
+    html += '<p class="periodic-legend">' + (isArcher()
+      ? '兩位角色共用元素及圖鑑。合成經驗歸給目前角色；本次解鎖的技能可由元素法師使用。'
+      : '兩位角色共用元素及圖鑑。合成經驗歸給目前角色。') + '</p>';
     html += '<div class="inventory-elements">' + ELEMENTS.map(e =>
       `<div class="inventory-element" style="--element-color:${e.color}">` +
       `<div class="inventory-symbol">${e.sym}</div><div class="inventory-name">${e.name}</div>` +
@@ -1883,16 +2284,23 @@
   function renderStatusTab() {
     const needed = player.level * player.level * 50;
     const el = document.getElementById('tab-status');
-    el.innerHTML = `<h3 style="margin-bottom:10px;">角色狀態</h3>` +
+    el.innerHTML = `<h3 style="margin-bottom:10px;">${HERO_INFO[activeHero].name}・角色狀態</h3>` +
+      `<div class="recipe-row"><span>武器</span><span>${HERO_INFO[activeHero].weapon}</span></div>` +
       `<div class="recipe-row"><span>等級</span><span style="color:#38bdf8;font-weight:700;">Lv.${player.level}</span></div>` +
       `<div class="recipe-row"><span>經驗值</span><span style="color:#fbbf24;">${player.exp} / ${needed}</span></div>` +
       `<div class="recipe-row"><span>HP</span><span>${player.hp} / ${player.maxHp}</span></div>` +
-      `<div class="recipe-row"><span>MP</span><span>${player.mp} / ${player.maxMp}</span></div>` +
+      (isArcher() ? '<div class="recipe-row"><span>技能</span><span>弓手不能施放技能</span></div>'
+        : `<div class="recipe-row"><span>MP</span><span>${Math.floor(player.mp)} / ${player.maxMp}</span></div>`) +
+      `<div class="recipe-row"><span>擊敗怪物</span><span>${window._stats.totalKills || 0}</span></div>` +
       `<div class="recipe-row"><span>攻擊力</span><span>${player.atk}</span></div>` +
-      `<div class="recipe-row"><span>已收集配方</span><span>${codex.length} / ${RECIPES.length}</span></div>`;
+      `<div class="recipe-row"><span>共用圖鑑・已收集配方</span><span>${codex.length} / ${RECIPES.length}</span></div>`;
   }
 
   function renderHelpTab() {
+    if (isArcher() && state.screen === 'play') {
+      document.getElementById('tab-help').textContent = '馬尾弓手：按住弓箭按鈕（鍵盤 Z 或空白鍵）集氣，放開射箭。短按單箭；小金色氣焰是三箭，大金色氣焰是大箭（可打碎岩石）。可以邊走邊集氣；射出後短暫硬直，箭碰到地形或怪物就停。你仍可以合成、收集與閱讀圖鑑，但弓手不能施放技能。';
+      return;
+    }
     document.getElementById('tab-help').innerHTML =
       `<h3 style="margin-bottom:10px;">操作說明</h3>` +
       `<div style="font-size:13px;color:#cbd5e1;line-height:1.8;">` +
@@ -1906,7 +2314,7 @@
       `<div class="recipe-row"><span>開啟選單</span><span style="color:#38bdf8;">I / Tab</span></div>` +
       `<div class="recipe-row"><span>關閉選單</span><span style="color:#38bdf8;">Esc</span></div>` +
       `<h4 style="color:#fbbf24;margin:12px 0 4px;">📱 觸控</h4>` +
-      `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">左側虛擬搖桿</span></div>` +
+      `<div class="recipe-row"><span>移動</span><span style="color:#38bdf8;">按住遊戲區任意位置拖曳，放開停止</span></div>` +
       `<div class="recipe-row"><span>近戰攻擊</span><span style="color:#38bdf8;">右側左下「普攻」大圓鈕</span></div>` +
       `<div class="recipe-row"><span>射擊元素彈</span><span style="color:#38bdf8;">右下「元素彈」圓鈕</span></div>` +
       `<div class="recipe-row"><span>切換彈種</span><span style="color:#38bdf8;">點擊元素欄</span></div>` +
@@ -1925,6 +2333,7 @@
 
   // === SKILL BUTTON HANDLERS (mobile) ===
   function selectSkill(slot) {
+    if (isArcher()) return;
     if (state.screen !== 'play' || state.paused) return;
     if (!RECIPES.some(recipe => recipe.id === equippedSkills[slot])) {
       showToast('技能尚未解鎖：請到選單 → 背包合成化合物');
@@ -1964,6 +2373,9 @@
   });
   document.getElementById('btn-title-codex').addEventListener('click', () => openMenu('codex'));
   document.getElementById('btn-title-status').addEventListener('click', () => openMenu('status'));
+  document.getElementById('btn-change-hero').addEventListener('click', () => {
+    if (state.screen === 'play' && window.confirm('返回選角會結束這次探索。角色經驗、元素和圖鑑會保留，房間進度不保留。確定返回？')) returnToTitle();
+  });
 
   // === MENU KEYBOARD SHORTCUTS ===
   window.addEventListener('keydown', (e) => {
@@ -1979,64 +2391,115 @@
     if (e.key === 'Escape') closeMenu();
   });
 
-  // === VIRTUAL JOYSTICK ===
+  // === FLOATING TOUCH JOYSTICK ===
   const joyCanvas = document.getElementById('joystick');
   const joyCtx = joyCanvas.getContext('2d');
-  let joyPointerId = null, joyX = 0, joyY = 0;
+  const MOVE_RADIUS = 44; // use CSS pixels regardless of canvas pixel density
+  const MOVE_DEAD_ZONE = 12;
+  let joyPointerId = null, joySurface = null, joyOriginX = 0, joyOriginY = 0;
+  let joyX = 0, joyY = 0, joyDirectionX = 0, joyDirectionY = 0;
+
+  function joyFacing() {
+    return joyDirectionX && (!joyDirectionY || Math.abs(joyX) >= Math.abs(joyY))
+      ? (joyDirectionX > 0 ? 'right' : 'left')
+      : (joyDirectionY > 0 ? 'down' : 'up');
+  }
 
   function drawJoystick() {
     joyCtx.clearRect(0, 0, 120, 120);
-    // Base circle
-    joyCtx.strokeStyle = '#334155'; joyCtx.lineWidth = 2;
-    joyCtx.beginPath(); joyCtx.arc(60, 60, 50, 0, Math.PI * 2); joyCtx.stroke();
-    // Thumb
-    const tx = 60 + joyX * 30, ty = 60 + joyY * 30;
+    joyCtx.fillStyle = 'rgba(15, 23, 42, 0.48)';
+    joyCtx.strokeStyle = 'rgba(125, 211, 252, 0.85)'; joyCtx.lineWidth = 2;
+    joyCtx.beginPath(); joyCtx.arc(60, 60, 57, 0, Math.PI * 2); joyCtx.fill(); joyCtx.stroke();
     joyCtx.fillStyle = '#38bdf8';
-    joyCtx.beginPath(); joyCtx.arc(tx, ty, 18, 0, Math.PI * 2); joyCtx.fill();
+    joyCtx.beginPath(); joyCtx.arc(60 + joyX * 30, 60 + joyY * 30, 17, 0, Math.PI * 2); joyCtx.fill();
   }
-  drawJoystick();
 
   function handleJoyPointer(e) {
     if (e.pointerId !== joyPointerId) return;
-    e.preventDefault();
-    const rect = joyCanvas.getBoundingClientRect();
-    const dx = ((e.clientX - rect.left) * 120 / rect.width - 60) / 50;
-    const dy = ((e.clientY - rect.top) * 120 / rect.height - 60) / 50;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len > 1) { joyX = dx / len; joyY = dy / len; }
-    else          { joyX = dx;      joyY = dy; }
-    keys.left  = joyX < -0.3; keys.right = joyX > 0.3;
-    keys.up    = joyY < -0.3; keys.down  = joyY > 0.3;
-    if (Math.abs(joyX) > Math.abs(joyY)) player.dir = joyX > 0 ? 'right' : 'left';
-    else if (Math.abs(joyY) > 0.3)       player.dir = joyY > 0 ? 'down'  : 'up';
+    const dx = e.clientX - joyOriginX, dy = e.clientY - joyOriginY;
+    const distance = Math.hypot(dx, dy);
+    const scale = Math.max(distance, MOVE_RADIUS);
+    joyX = dx / scale; joyY = dy / scale;
+    if (distance < MOVE_DEAD_ZONE) {
+      joyDirectionX = joyDirectionY = 0;
+    } else {
+      joyDirectionX = Math.abs(joyX) >= 0.27 ? Math.sign(dx) : 0;
+      joyDirectionY = Math.abs(joyY) >= 0.27 ? Math.sign(dy) : 0;
+      if ((joyDirectionX || joyDirectionY) && (!isArcher() || player.atkTimer <= 0)) player.dir = joyFacing();
+    }
     drawJoystick();
   }
 
   function resetJoystick(e) {
     if (e && e.pointerId !== joyPointerId) return;
-    joyPointerId = null; joyX = 0; joyY = 0;
-    keys.left = keys.right = keys.up = keys.down = false;
-    drawJoystick();
+    const surface = joySurface, pointerId = joyPointerId;
+    joyPointerId = null; joySurface = null;
+    joyX = joyY = joyDirectionX = joyDirectionY = 0;
+    joyCanvas.hidden = true;
+    if (surface && surface.hasPointerCapture(pointerId)) surface.releasePointerCapture(pointerId);
   }
-  joyCanvas.addEventListener('pointerdown', (e) => {
-    if (joyPointerId !== null) return;
+
+  function startJoystick(e) {
+    if (e.pointerType !== 'touch' || e.button !== 0 || joyPointerId !== null ||
+        state.screen !== 'play' || state.paused || document.hidden ||
+        e.target.closest('button, a, input, select, textarea, [role="button"]')) return;
+    joySurface = e.currentTarget;
     joyPointerId = e.pointerId;
-    joyCanvas.setPointerCapture(e.pointerId);
+    joyOriginX = e.clientX; joyOriginY = e.clientY;
+    joySurface.setPointerCapture(e.pointerId);
+    joyCanvas.style.left = joyOriginX + 'px';
+    joyCanvas.style.top = joyOriginY + 'px';
+    joyCanvas.hidden = false;
     handleJoyPointer(e);
-  });
-  joyCanvas.addEventListener('pointermove', handleJoyPointer);
-  for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-    joyCanvas.addEventListener(event, resetJoystick);
   }
-  window.addEventListener('blur', () => resetJoystick());
-  document.addEventListener('visibilitychange', () => { if (document.hidden) resetJoystick(); });
+
+  for (const surface of [document.getElementById('stage'), document.getElementById('mobile-controls')]) {
+    surface.addEventListener('pointerdown', startJoystick);
+    surface.addEventListener('pointermove', handleJoyPointer);
+    for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      surface.addEventListener(event, resetJoystick);
+    }
+  }
+  function resetTouchInput() {
+    resetJoystick();
+    cancelBowCharge();
+    bowFan = null;
+    meleeQueued = false;
+  }
+  window.addEventListener('blur', resetTouchInput);
+  window.addEventListener('pagehide', resetTouchInput);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetTouchInput(); });
   window.addEventListener('pointerdown', (e) => {
     if (e.pointerType === 'touch') document.body.classList.add('touch-controls');
   }, { passive: true });
 
   // === MOBILE ACTION BUTTONS ===
-  // Click fires once for touch, mouse and keyboard without double activation.
-  document.getElementById('btn-atk').addEventListener('click', () => meleeAttack());
+  const meleeButton = document.getElementById('btn-atk');
+  let meleePointerType = '';
+  meleeButton.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    meleePointerType = e.pointerType;
+    if (isArcher()) {
+      if (startBowCharge('pointer:' + e.pointerId)) meleeButton.setPointerCapture(e.pointerId);
+      return;
+    }
+    // Allow a second touch while another finger owns the joystick.
+    if (e.pointerType === 'touch') requestMobileMelee();
+  });
+  meleeButton.addEventListener('pointerup', (e) => finishBowCharge('pointer:' + e.pointerId));
+  for (const event of ['pointercancel', 'lostpointercapture']) {
+    meleeButton.addEventListener(event, (e) => cancelBowCharge('pointer:' + e.pointerId));
+  }
+  meleeButton.addEventListener('click', (e) => {
+    if (e.pointerType === 'touch' || e.sourceCapabilities?.firesTouchEvents ||
+        (!e.pointerType && e.detail > 0 && meleePointerType === 'touch')) return;
+    if (isArcher()) {
+      // Keyboard Enter / assistive activation can still fire a deliberate single shot.
+      if (e.detail === 0 && startBowCharge('activate')) finishBowCharge('activate');
+      return;
+    }
+    if (state.screen === 'play' && !state.paused) meleeAttack();
+  });
   document.getElementById('btn-skill').addEventListener('click', () => useSkill(selectedSkillSlot));
   document.getElementById('btn-shoot').addEventListener('click', () => shootProjectile());
 
@@ -2082,12 +2545,34 @@
     ctx.restore();
   }
 
+  function chooseHero(hero) {
+    if (state.screen !== 'title' || !HERO_INFO[hero]) return;
+    if (activeHero !== hero) {
+      storeActiveProgress();
+      activeHero = hero;
+      applyHeroProgress(heroProgress[hero]);
+    }
+    chosenHero = hero;
+    try { localStorage.setItem(HERO_PREF_KEY, chosenHero); } catch { /* storage unavailable */ }
+    updateTitleStats();
+    for (const id of ['mage','archer']) {
+      document.getElementById('pick-' + id).setAttribute('aria-pressed', String(id === hero));
+    }
+    document.getElementById('hero-summary').textContent = hero === 'archer'
+      ? '遠距弓箭｜可邊走邊集氣，放開射擊｜不能施放技能'
+      : '近戰魔杖｜可發射元素彈與施放合成技能';
+  }
+
   // === TITLE STATS ===
   function updateTitleStats() {
     const el = document.getElementById('title-stats');
     if (!el) return;
     const totalElems = Object.values(inventory).reduce((a, b) => a + b, 0);
-    el.textContent = `Lv.${player.level} ｜ 圖鑑 ${codex.length}/${RECIPES.length} ｜ 元素 ${totalElems} 個`;
+    el.textContent = `共用圖鑑 ${codex.length}/${RECIPES.length} ｜ 共用元素 ${totalElems} 個`;
+    for (const id of ['mage','archer']) {
+      const level = id === activeHero ? player.level : heroProgress[id].player.level;
+      document.getElementById('pick-' + id + '-lv').textContent = 'Lv.' + level;
+    }
   }
 
   // === INIT ===
@@ -2097,7 +2582,25 @@
   new ResizeObserver(resizeCanvas).observe(document.getElementById('stage'));
   resizeCanvas();
   loadGame();
-  updateTitleStats();
+  document.getElementById('pick-mage').addEventListener('click', () => chooseHero('mage'));
+  document.getElementById('pick-archer').addEventListener('click', () => chooseHero('archer'));
+  const archerPreview = document.getElementById('archer-preview').getContext('2d');
+  drawArcherSprite(archerPreview, 24, 41, 34, 'down', 'idle', 0, false);
+  const drawArcherCard = () => {
+    archerPreview.clearRect(0, 0, 48, 54);
+    archerPreview.imageSmoothingEnabled = false;
+    archerPreview.drawImage(archerArt.img, 0, 0, 120, 120, 0, 0, 48, 48);
+  };
+  if (archerArt.img.complete && archerArt.img.naturalWidth) drawArcherCard();
+  else archerArt.img.addEventListener('load', drawArcherCard, {once:true});
+  const magePreview = document.getElementById('mage-preview').getContext('2d');
+  // drawArt targets the world canvas; draw the preview directly from the atlas.
+  const drawMageCard = () => { magePreview.imageSmoothingEnabled = false; magePreview.drawImage(heroHiResArt.img, 0, 0, 120, 120, 0, 0, 48, 48); };
+  if (heroHiResArt.img.complete && heroHiResArt.img.naturalWidth) drawMageCard();
+  else heroHiResArt.img.addEventListener('load', drawMageCard, {once:true});
+  let savedHero = 'mage';
+  try { if (localStorage.getItem(HERO_PREF_KEY) === 'archer') savedHero = 'archer'; } catch { /* default */ }
+  chooseHero(savedHero);
   requestAnimationFrame(gameLoop);
 })();
 </script>
