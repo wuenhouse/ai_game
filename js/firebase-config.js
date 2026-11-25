@@ -1,4 +1,4 @@
-// Firebase Console 提供的公開 Web 設定，用來指定遊戲留言所屬的專案。
+// Firebase Console 提供的公開 Web 設定，指定留言、成績與排行榜所屬專案。
 // 實際資料權限由 Firebase Authentication 與 Realtime Database Rules 控制。
 export const firebaseConfig = {
   apiKey: 'AIzaSyAEqKjfBQLbpmERdVqYO9h6JFTtL6YcuPo',

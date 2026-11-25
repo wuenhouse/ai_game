@@ -1,5 +1,5 @@
 import { GAME_NAMES } from './feedback-data.mjs';
-import { isConfigured, loadThreads, loadReplies, loadPostingEnabled, postMessage, cooldownSeconds } from './feedback-store.js';
+import { isConfigured, loadThreads, loadReplies, loadPostingEnabled, postMessage, cooldownSeconds } from './feedback-store.js?v=20261125-2';
 
 const dialog = document.getElementById('feedback-dialog');
 const list = document.getElementById('feedback-list');
@@ -53,7 +53,7 @@ async function refreshPosting(token) {
 function renderMessage(message) {
   const item = node('article', undefined, 'discussion-message');
   const date = new Date(message.createdAt);
-  item.append(node('div', `${message.author} · ${Number.isNaN(date.getTime()) ? '' : date.toLocaleString('zh-TW')}`, 'discussion-meta'),
+  item.append(node('div', `${message.author} · ${Number.isNaN(date.getTime()) ? '' : date.toLocaleString(window.GameI18n.locale)}`, 'discussion-meta discussion-author'),
     node('p', message.message, 'discussion-text'));
   return item;
 }

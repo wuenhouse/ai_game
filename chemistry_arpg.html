@@ -13,6 +13,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>元素獵人 | Chem ARPG</title>
+  <script src="./js/translations.js?v=20261125-2"></script>
+  <script src="./js/i18n.js?v=20261125-2"></script>
+  <script src="./js/score-session.js?v=20261125-2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
     html, body { width: 100%; height: 100dvh; overflow: hidden; background: #090d16; color: #f8fafc;
@@ -287,6 +290,7 @@
     .touch-controls .controls { touch-action: none; }
     .touch-controls .move-hint { display: block; }
   </style>
+  <link rel="stylesheet" href="./js/platform.css?v=20261125-2" />
 </head>
 <body>
 <div id="app">
@@ -304,6 +308,7 @@
     </div>
     <p id="hero-summary"></p>
     <button class="start-btn" id="btn-start">出發探索 →</button>
+    <button class="platform-button" data-leaderboard-game="chemistry_arpg">🏆 排行榜</button>
     <div class="title-secondary">
       <button class="sub-btn" id="btn-title-codex">圖鑑</button>
       <button class="sub-btn" id="btn-title-status">角色狀態</button>
@@ -318,6 +323,7 @@
       <span class="hud-label mage-hud">MP</span>
       <div class="bar bar-mp mage-hud"><div class="bar-fill" id="mp-fill" style="width:100%"></div></div>
       <span><span class="hud-label" id="hud-hero">元素法師</span> Lv.<span class="hud-val" id="hud-lv">1</span></span>
+      <span class="run-score"><span>本次探索分數</span> <strong id="run-score">0</strong></span>
       <button class="menu-btn" id="btn-menu">選單</button>
     </div>
     <div class="elem-bar" id="elem-bar"></div>
@@ -411,6 +417,7 @@
   <div class="modal-card" style="text-align:center;">
     <h2 style="margin-bottom:8px;">💀 實驗失敗...</h2>
     <p style="color:#94a3b8;margin-bottom:16px;">你在探索中倒下了，但收集到的元素與經驗已保存。</p>
+    <div data-score-result="death"></div>
     <button class="start-btn" id="btn-death-return" style="font-size:15px;padding:12px 30px;">返回大廳</button>
   </div>
 </div>
@@ -419,6 +426,7 @@
   <div class="modal-card" style="text-align:center;">
     <h2 style="margin-bottom:8px;">🏆 Boss 擊敗！</h2>
     <p style="color:#94a3b8;" id="victory-summary"></p>
+    <div data-score-result="victory"></div>
     <button class="start-btn" id="btn-victory-return" style="font-size:15px;padding:12px 30px;margin-top:16px;">返回大廳</button>
   </div>
 </div>
@@ -1273,6 +1281,8 @@
   }
 
   function updateHUD() {
+    const scoreEl = document.getElementById('run-score');
+    if (scoreEl) scoreEl.textContent = window.GameScores?.score ?? 0;
     document.getElementById('hp-fill').style.width = `${(player.hp / player.maxHp) * 100}%`;
     document.getElementById('mp-fill').style.width = `${(player.mp / player.maxMp) * 100}%`;
     document.getElementById('hud-lv').textContent = player.level;
@@ -1550,6 +1560,7 @@
 
   function killMonster(room, index) {
     const m = room.monsters[index];
+    window.GameScores?.addKill(m.type);
     // Spawn drops
     if (m.type === 'molecular' && m.recipe) {
       Object.entries(m.recipe.req).forEach(([sym, count]) => {
@@ -1566,6 +1577,8 @@
     } else {
       room.drops.push({ x: m.x, y: m.y, sym: m.element.sym, life: 15 });
     }
+    const scoreEl = document.getElementById('run-score');
+    if (scoreEl) scoreEl.textContent = window.GameScores?.score ?? 0;
     // EXP
     const expGain = m.type === 'boss' ? 100 : (m.type === 'molecular' ? 30 : 10 + Math.floor(Math.random() * 11));
     gainExp(expGain);
@@ -1649,7 +1662,9 @@
 
   // === PLAYER DEATH ===
   function playerDeath() {
+    if (state.screen !== 'play') return;
     state.screen = 'dead';
+    window.GameScores?.finish(null, 'death', activeHero);
     resetTouchInput();
     window._stats.deaths = (window._stats.deaths || 0) + 1;
     saveGame();
@@ -1745,6 +1760,7 @@
       Numpad1: '1', Numpad2: '2', Numpad3: '3', Numpad4: '4' })[e.code] || e.key;
   }
   window.addEventListener('keydown', (e) => {
+    if (e.target?.closest?.('input,textarea,select,[contenteditable]')) return;
     if (state.screen !== 'play' || state.paused) return;
     const actionKey = gameKey(e);
     if (isArcher() && ['z', 'Z', ' '].includes(actionKey)) {
@@ -1789,6 +1805,7 @@
 
   // === BUTTON HANDLERS ===
   document.getElementById('btn-start').addEventListener('click', () => {
+    window.GameScores?.begin('chemistry_arpg');
     activeHero = chosenHero;
     const archer = isArcher();
     document.getElementById('game-screen').classList.toggle('archer-run', archer);
@@ -2066,7 +2083,9 @@
 
   // === BOSS VICTORY & RETURN TO TITLE ===
   function bossVictory() {
+    if (state.screen !== 'play') return;
     state.screen = 'victory';
+    window.GameScores?.finish(null, 'victory', activeHero);
     resetTouchInput();
     const totalElems = Object.values(inventory).reduce((a, b) => a + b, 0);
     const summary = `獲得經驗值 100，收集了 ${totalElems} 個元素！`;
@@ -2374,11 +2393,12 @@
   document.getElementById('btn-title-codex').addEventListener('click', () => openMenu('codex'));
   document.getElementById('btn-title-status').addEventListener('click', () => openMenu('status'));
   document.getElementById('btn-change-hero').addEventListener('click', () => {
-    if (state.screen === 'play' && window.confirm('返回選角會結束這次探索。角色經驗、元素和圖鑑會保留，房間進度不保留。確定返回？')) returnToTitle();
+    if (state.screen === 'play' && window.confirm(window.GameI18n.t('返回選角會結束這次探索。角色經驗、元素和圖鑑會保留，房間進度不保留。確定返回？'))) returnToTitle();
   });
 
   // === MENU KEYBOARD SHORTCUTS ===
   window.addEventListener('keydown', (e) => {
+    if (e.target?.closest?.('input,textarea,select,[contenteditable]')) return;
     if (detailDialog.open) {
       if (e.key === 'Escape') { e.preventDefault(); detailDialog.close(); }
       return;
@@ -2519,7 +2539,7 @@
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('地圖', ox, 23);
+    ctx.fillText(window.GameI18n?.t('地圖') ?? '地圖', ox, 23);
     for (let y = 0; y < MAP_H; y++) {
       for (let x = 0; x < MAP_W; x++) {
         const room = rooms[y][x];
@@ -2604,5 +2624,6 @@
   requestAnimationFrame(gameLoop);
 })();
 </script>
+<script type="module" src="./js/scores.js?v=20261125-2"></script>
 </body>
 </html>

@@ -13,6 +13,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>3D 化學魔術方塊 | Chemistry Rubik's Cube</title>
+  <script src="./js/translations.js?v=20261125-2"></script>
+  <script src="./js/i18n.js?v=20261125-2"></script>
+  <script src="./js/score-session.js?v=20261125-2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
     html, body {
@@ -43,8 +46,10 @@
     }
     .info-banner strong { color: #fbbf24; }
     #canvas-container {
-      flex: 1; position: relative; touch-action: none; cursor: grab;
+      flex: 1; min-height: 0; position: relative; touch-action: none; cursor: grab;
     }
+    #canvas-container canvas { display: block; }
+    .top-bar, .info-banner, .bottom-bar { flex-shrink: 0; }
     #canvas-container:active { cursor: grabbing; }
     #toast {
       position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
@@ -84,6 +89,7 @@
     }
     .formula { font-weight: 800; color: #38bdf8; font-size: 16px; }
   </style>
+  <link rel="stylesheet" href="./js/platform.css?v=20261125-2" />
 </head>
 <body>
 <div id="app">
@@ -211,7 +217,7 @@
 
     ctx.font = 'bold 26px sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillText(el.name, 128, 204);
+    ctx.fillText(window.GameI18n.t(el.name), 128, 204, 220);
 
     const tex = new THREE.CanvasTexture(c);
     tex.anisotropy = 4;
@@ -221,6 +227,14 @@
   const stickerMaterials = ELEMENTS.map(el => new THREE.MeshStandardMaterial({
     map: createStickerTexture(el), roughness: 0.35, metalness: 0.1
   }));
+  window.addEventListener('languagechange', () => {
+    stickerMaterials.forEach((material, index) => {
+      const previous = material.map;
+      material.map = createStickerTexture(ELEMENTS[index]);
+      material.needsUpdate = true;
+      previous.dispose();
+    });
+  });
   const innerMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
 
   const cubeGroup = new THREE.Group();
@@ -510,11 +524,14 @@
   document.getElementById('btn-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.add('open'));
   document.getElementById('btn-close-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.remove('open'));
 
-  window.addEventListener('resize', () => {
+  function resizeCube() {
+    if (!container.clientWidth || !container.clientHeight) return;
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(container.clientWidth, container.clientHeight);
-  });
+  }
+  window.addEventListener('resize', resizeCube);
+  new ResizeObserver(resizeCube).observe(container);
 
   function animate() {
     requestAnimationFrame(animate);
