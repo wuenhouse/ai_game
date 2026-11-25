@@ -1,5 +1,48 @@
 # Firebase 設定與驗收
 
+## 新增：兩款遊戲成績與排行榜（2026-11-25，尚未部署）
+
+本地已加入俄羅斯方塊與元素獵人的送分與排行榜，沿用留言的同一個 Firebase app 與匿名帳號。讀取排行榜不會建立帳號；結算後輸入暱稱並按送出才登入、寫入。不把成績、暱稱或 UID 加入 GA4 事件。
+
+| 路徑 | 資料與權限 |
+| --- | --- |
+| `scoreRuns/{game}/{uid}/{runId}` | 每次主動登錄的局次；只有該玩家與 Firebase 管理者可讀，客戶端不可修改或刪除 |
+| `leaderboards/{game}/{uid}` | 公開最高分；按 `score` 排序且每次最多 20 筆才能讀取整個榜單，玩家也可讀自己的單筆 |
+| `scoreLatest/{uid}` | 私有最近送分標記；兩款共用 5 秒冷卻，必須與新局次原子寫入 |
+
+`game` 只接受 `chemistry_tetris`、`chemistry_arpg`。魔術方塊不寫入成績。歷史欄位為 `nickname`、`score`、`durationMs`、`language`、`version`、`reason`、`hero`、`createdAt`；管理者可在 Firebase Console 的 Realtime Database → Data → `scoreRuns` 查看每局分數。`language` 是登錄當下所選語系；`durationMs` 從本局開始計算，包含選單／分頁停留時間，不等同有效操作時間。
+
+排行榜只存 `nickname`、`score`、`createdAt`、`runId`，匿名 UID 是公開資料的路徑 key。低分與同分仍保存私有歷史，不覆蓋最高分及其暱稱。匿名帳號以瀏覽器為單位，換裝置或清除網站資料後可能形成新玩家；暱稱不具唯一性，也不是登入帳號。分數由前端計算，規則可驗證身分／格式／原子性，無法證明沒有改分。
+
+網路操作 15 秒仍未確認時，介面顯示未確認提示並保留暱稱供重試。Firebase 仍可能在恢復連線後完成原寫入；同一頁面的同局重試共用原操作，並以固定局次 ID 及不可覆寫規則防止重複。重新整理頁面會失去尚未送出的結算畫面，不提供跨頁面的離線送分佇列。
+
+### 本地驗收
+
+一般測試不連 Firebase：
+
+```sh
+node --test tests/*.test.mjs tests/*.test.cjs
+```
+
+DOM 測試需要 jsdom；規則驗收需要 Firebase 官方工具與 Java。安裝在暫存目錄，不改專案依賴：
+
+```sh
+npm install --prefix /private/tmp/ai-game-validation firebase-tools@13.35.1 @firebase/rules-unit-testing@3 firebase@10 jsdom@26
+AI_GAME_TEST_MODULES=/private/tmp/ai-game-validation node --test tests/i18n-dom.integration.mjs tests/score-ui.integration.mjs
+FIREBASE_EMULATORS_PATH=/private/tmp/ai-game-validation/emulators /private/tmp/ai-game-validation/node_modules/.bin/firebase emulators:exec --only auth,database --project demo-ai-game --config firebase/emulator.json 'node --test tests/firebase-scores-emulator.mjs'
+```
+
+測試固定連到 `127.0.0.1:9037` 的 `demo-ai-game`，會清空該本機模擬器資料。不要同時與手動瀏覽器驗收共用資料。測試套件的 firebase@10 用於規則引擎；瀏覽器另以網站實際的 Firebase SDK 13.4.0 驗證送分、讀榜、斷線重試。
+
+### 正式部署步驟
+
+1. 先備份並讀取正式規則，與本地 `database.rules.json` 比對；保留正式環境後來新增的其他功能，不直接覆蓋未知變更。
+2. 發布合併後的規則，讀回確認。既有留言規則本次保持不變，新增三個成績路徑。
+3. 一起發布四個 HTML 與完整 `js/`。共用資源使用 `v=20261125-2`，未來更版需同步更新版本，避免新舊模組混用。
+4. 正式網站再確認三語、合法送分、私有歷史與榜單；本地驗收結果不代表正式環境已部署。
+
+本次沒有發布正式規則，也沒有在正式資料庫寫測試成績。程式碼依使用者要求提交、推送並合併至 `main`；網站部署狀態需另行確認。詳細結果見 [驗收紀錄](../docs/i18n-leaderboards-validation.md)。
+
 網站維持靜態部署。Firebase Realtime Database 提供共用 JSON 資料；不需要自行部署 API。每款遊戲先顯示最新 20 則主題，主題和回覆皆可逐頁讀取較早的內容，不自動刪除舊紀錄。
 
 ## 1. 確認專案屬於你的帳號

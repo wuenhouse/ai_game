@@ -12,7 +12,7 @@ function rememberCooldown(ms) {
 function cooldownError() {
   return Object.assign(new Error('發文太快'), { code: 'feedback/cooldown' });
 }
-async function connect() {
+export async function connect() {
   if (!isConfigured()) throw new Error('討論區尚未開放，請稍後再來。');
   if (!connection) {
     connection = (async () => {
@@ -27,7 +27,7 @@ async function connect() {
   }
   return connection;
 }
-async function getWriter(auth, authSDK) {
+export async function getWriter(auth, authSDK) {
   // Public reads don't need to issue an anonymous account.
   await auth.authStateReady();
   if (auth.currentUser) return auth.currentUser;

@@ -14,6 +14,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>化學益智遊戲實驗室 | Chem Puzzle Lab</title>
+  <script src="./js/translations.js?v=20261125-2"></script>
+  <script src="./js/i18n.js?v=20261125-2"></script>
+  <script src="./js/score-session.js?v=20261125-2"></script>
   <style>
     :root {
       --bg: #0b1120;
@@ -210,6 +213,7 @@
     .discussion-replies .discussion-message { background: var(--bg); }
     @media (max-width: 480px) { .feedback-dialog { padding: 16px; } }
   </style>
+  <link rel="stylesheet" href="./js/platform.css?v=20261125-2" />
 </head>
 <body>
   <div class="container">
@@ -229,6 +233,7 @@
       </div>
       <p class="card-desc">深入地下化學實驗室，用短杖近戰、發射六種元素彈，收集元素並合成技能。</p>
       <a class="play-btn" href="./chemistry_arpg.html">開始探索 →</a>
+      <button class="platform-button" data-leaderboard-game="chemistry_arpg">🏆 排行榜</button>
       <button type="button" class="feedback-entry" data-feedback-game="chemistry_arpg">💬 意見與討論</button>
     </article>
 
@@ -255,6 +260,7 @@
       </div>
       <p class="card-desc">經典消行結合相鄰原子自動合成引爆！支援底部虛擬按鍵與棋盤手勢滑動，挑戰連續重力反應 Combo。</p>
       <a class="play-btn" href="./chemistry_tetris.html">開始遊玩化學俄羅斯方塊 →</a>
+      <button class="platform-button" data-leaderboard-game="chemistry_tetris">🏆 排行榜</button>
       <button type="button" class="feedback-entry" data-feedback-game="chemistry_tetris">💬 意見與討論</button>
     </article>
 
@@ -284,6 +290,7 @@
     <section id="feedback-list" aria-label="討論主題"></section>
     <button type="button" id="feedback-older" class="feedback-action" hidden>載入更早的主題</button>
   </dialog>
-  <script type="module" src="./js/feedback.js"></script>
+  <script type="module" src="./js/feedback.js?v=20261125-2"></script>
+<script type="module" src="./js/scores.js?v=20261125-2"></script>
 </body>
 </html>

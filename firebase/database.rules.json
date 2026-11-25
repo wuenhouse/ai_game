@@ -88,6 +88,91 @@
           ".validate": false
         }
       }
+    },
+    "scoreRuns": {
+      "$game": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid && ($game === 'chemistry_tetris' || $game === 'chemistry_arpg')",
+          "$run": {
+            ".write": "auth != null && auth.uid === $uid && ($game === 'chemistry_tetris' || $game === 'chemistry_arpg') && !data.exists() && newData.exists() && (!root.child('scoreLatest').child($uid).exists() || now >= root.child('scoreLatest').child($uid).child('at').val() + 5000) && newData.parent().parent().parent().parent().child('scoreLatest').child($uid).child('at').val() === now && newData.parent().parent().parent().parent().child('scoreLatest').child($uid).child('game').val() === $game && newData.parent().parent().parent().parent().child('scoreLatest').child($uid).child('runId').val() === $run",
+            ".validate": "newData.hasChildren(['nickname', 'score', 'durationMs', 'language', 'version', 'reason', 'hero', 'createdAt']) && (($game === 'chemistry_tetris' && newData.child('reason').val() === 'gameover' && newData.child('hero').val() === 'none') || ($game === 'chemistry_arpg' && (newData.child('reason').val() === 'death' || newData.child('reason').val() === 'victory') && (newData.child('hero').val() === 'mage' || newData.child('hero').val() === 'archer')))  && ((root.child('leaderboards').child($game).child($uid).exists() && newData.child('score').val() <= root.child('leaderboards').child($game).child($uid).child('score').val()) || (newData.parent().parent().parent().parent().child('leaderboards').child($game).child($uid).child('runId').val() === $run && newData.parent().parent().parent().parent().child('leaderboards').child($game).child($uid).child('score').val() === newData.child('score').val() && newData.parent().parent().parent().parent().child('leaderboards').child($game).child($uid).child('nickname').val() === newData.child('nickname').val() && newData.parent().parent().parent().parent().child('leaderboards').child($game).child($uid).child('createdAt').val() === now))",
+            "nickname": {
+              ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+            },
+            "score": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000 && newData.val() % 1 === 0"
+            },
+            "durationMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 604800000 && newData.val() % 1 === 0"
+            },
+            "language": {
+              ".validate": "newData.val() === 'zh-Hant' || newData.val() === 'en' || newData.val() === 'ja'"
+            },
+            "version": {
+              ".validate": "newData.val() === '2026-11-25.1'"
+            },
+            "reason": {
+              ".validate": "newData.isString()"
+            },
+            "hero": {
+              ".validate": "newData.isString()"
+            },
+            "createdAt": {
+              ".validate": "newData.isNumber() && newData.val() === now"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    },
+    "scoreLatest": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && newData.exists() && (!root.child('scoreLatest').child($uid).exists() || now >= root.child('scoreLatest').child($uid).child('at').val() + 5000)",
+        ".validate": "newData.hasChildren(['game', 'runId', 'at']) && !root.child('scoreRuns').child(newData.child('game').val()).child($uid).child(newData.child('runId').val()).exists() && newData.parent().parent().child('scoreRuns').child(newData.child('game').val()).child($uid).child(newData.child('runId').val()).child('createdAt').val() === now",
+        "game": {
+          ".validate": "newData.val() === 'chemistry_tetris' || newData.val() === 'chemistry_arpg'"
+        },
+        "runId": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{1,128}$/)"
+        },
+        "at": {
+          ".validate": "newData.isNumber() && newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "leaderboards": {
+      "$game": {
+        ".read": "($game === 'chemistry_tetris' || $game === 'chemistry_arpg') && query.orderByChild === 'score' && query.limitToLast !== null && query.limitToLast > 0 && query.limitToLast <= 20",
+        ".indexOn": [
+          "score"
+        ],
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid && ($game === 'chemistry_tetris' || $game === 'chemistry_arpg')",
+          ".write": "auth != null && auth.uid === $uid && ($game === 'chemistry_tetris' || $game === 'chemistry_arpg') && newData.exists() && (!data.exists() || newData.child('score').val() > data.child('score').val()) && !root.child('scoreRuns').child($game).child($uid).child(newData.child('runId').val()).exists() && newData.parent().parent().parent().child('scoreRuns').child($game).child($uid).child(newData.child('runId').val()).child('createdAt').val() === now && newData.parent().parent().parent().child('scoreRuns').child($game).child($uid).child(newData.child('runId').val()).child('score').val() === newData.child('score').val() && newData.parent().parent().parent().child('scoreRuns').child($game).child($uid).child(newData.child('runId').val()).child('nickname').val() === newData.child('nickname').val()",
+          ".validate": "newData.hasChildren(['nickname', 'score', 'createdAt', 'runId'])",
+          "nickname": {
+            ".validate": "newData.isString() && newData.val().length <= 20 && newData.val().replace('\\u0009', '').replace('\\u000a', '').replace('\\u000b', '').replace('\\u000c', '').replace('\\u000d', '').replace('\\u0020', '').replace('\\u00a0', '').replace('\\u1680', '').replace('\\u2000', '').replace('\\u2001', '').replace('\\u2002', '').replace('\\u2003', '').replace('\\u2004', '').replace('\\u2005', '').replace('\\u2006', '').replace('\\u2007', '').replace('\\u2008', '').replace('\\u2009', '').replace('\\u200a', '').replace('\\u2028', '').replace('\\u2029', '').replace('\\u202f', '').replace('\\u205f', '').replace('\\u3000', '').replace('\\ufeff', '').length > 0"
+          },
+          "score": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000 && newData.val() % 1 === 0"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() === now"
+          },
+          "runId": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{1,128}$/)"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }
