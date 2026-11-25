@@ -349,6 +349,33 @@ Boss 擊敗！|Boss defeated!|ボス撃破！
 無效的成績。|Invalid score.|無効なスコアです。
 無效的遊玩時間。|Invalid play duration.|無効なプレイ時間です。
 一般怪 10・分子怪 30・Boss 100 分|Normal 10 · Molecular 30 · Boss 100 points|通常の敵10・分子の敵30・ボス100点
+入門探索|Guided adventure|ガイド付き探索
+進階探索|Classic exploration|通常探索
+入門有任務提示，不列入排行榜。進階保留原本的探索與排行榜。|Guided mode offers objectives but no leaderboard. Classic mode keeps the original adventure and leaderboard.|ガイド付きモードには目標の案内があり、ランキングには載りません。通常モードは従来通りです。
+輔助戰鬥|Combat assist|戦闘アシスト
+靠近敵人會自動普攻，不耗元素或 MP。也能隨時手動攻擊。|Basic attacks fire automatically near enemies without using elements or MP. You can still attack manually.|敵に近づくと元素やMPを消費せず通常攻撃を自動で行います。手動でも攻撃できます。
+目前任務|Current objective|現在の目標
+再玩入門|Play the guide again|ガイドをもう一度遊ぶ
+返回選角|Back to hero selection|キャラクター選択に戻る
+1/4 · 收集原子|1/4 · Collect atoms|1/4 · 原子を集める
+移動到金色標記，靠近即可拾取。|Move to the gold marker to pick up an atom.|金色のマークに近づくと原子を拾えます。
+2/4 · 合成水分子|2/4 · Make a water molecule|2/4 · 水分子を作る
+已有材料，按下按鈕合成。|You have the atoms you need. Press the button to combine them.|原子がそろいました。ボタンを押して組み合わせましょう。
+合成 H₂O|Make H₂O|H₂Oを作る
+3/4 · 試用淨化之水|3/4 · Try the healing skill|3/4 · 回復スキルを試す
+這是遊戲中的回復技能。試用後，右側通道就會打開。|This in-game skill restores HP. Try it to open the passage on the right.|ゲーム内でHPを回復するスキルです。使うと右の通路が開きます。
+使用 H₂O 技能|Use H₂O skill|H₂Oスキルを使う
+3/4 · 通過守衛|3/4 · Get past the guardian|3/4 · 番人を突破する
+往右進入下一間房，靠近並擊倒守衛。關閉輔助時請手動攻擊。|Go right into the next room and defeat the guardian. Attack manually if assist is off.|右の部屋に進み、番人を倒しましょう。アシストがオフの場合は手動で攻撃します。
+擊倒守衛。關閉輔助時請手動攻擊。|Defeat the guardian. Attack manually if assist is off.|番人を倒しましょう。アシストがオフの場合は手動で攻撃します。
+4/4 · 抵達出口|4/4 · Reach the exit|4/4 · 出口にたどり着く
+走向金色出口，完成這次探索。|Reach the gold exit to finish the adventure.|金色の出口に進むと探索クリアです。
+H₂O：2 個氫原子和 1 個氧原子。這是分子組成，不是實驗步驟。|H₂O has 2 hydrogen atoms and 1 oxygen atom. This shows what the molecule contains, not an experiment.|H₂O は水素原子2個と酸素原子1個でできています。分子の構成を示しており、実験の手順ではありません。
+入門任務完成！|Guided adventure complete!|ガイド付き探索クリア！
+探索尚未完成|Adventure not completed|探索はまだクリアしていません
+已合成 H₂O。配方與圖鑑已保存。|You made H₂O. Your recipe and codex progress are saved.|H₂Oを作りました。レシピと図鑑の進捗を保存しました。
+已收集的任務材料|Atoms collected for this objective|目標のために集めた原子
+缺少 |need |不足：
 語言|Language|言語
 `;
   window.GameTranslations = Object.fromEntries(rows.trim().split('\n').map(row => {

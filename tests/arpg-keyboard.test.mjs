@@ -9,7 +9,7 @@ function setup() {
   const keys = {}, state = { screen: 'play', paused: false }, skills = [];
   vm.runInNewContext(html.split('// === KEYBOARD INPUT ===')[1].split('// === BUTTON HANDLERS ===')[0], {
     window: { addEventListener: (type, fn) => { handlers[type] = fn; } },
-    state, keys, isArcher: () => false, selectedSkillSlot: 1, useSkill: n => skills.push(n), cycleSkill() {},
+    document:{hidden:false}, state, keys, isArcher: () => false, selectedSkillSlot: 1, useSkill: n => skills.push(n), cycleSkill() {},
   });
   const send = (type, code, key, repeat = false) => {
     let prevented = false;

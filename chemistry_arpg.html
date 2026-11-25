@@ -7,13 +7,15 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-7BKPPQVQWR');
+    gtag('config', 'G-7BKPPQVQWR', {allow_google_signals:false, allow_ad_personalization_signals:false});
   </script>
   <meta charset="UTF-8" />
+  <script src="./js/game-analytics.js?v=20261125-3"></script>
+  <script>window.GameAnalytics?.enter("chemistry_arpg");</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>元素獵人 | Chem ARPG</title>
-  <script src="./js/translations.js?v=20261125-2"></script>
+  <script src="./js/translations.js?v=20261125-3"></script>
   <script src="./js/i18n.js?v=20261125-2"></script>
   <script src="./js/score-session.js?v=20261125-2"></script>
   <style>
@@ -289,6 +291,29 @@
     }
     .touch-controls .controls { touch-action: none; }
     .touch-controls .move-hint { display: block; }
+    .title-screen { justify-content:flex-start; overflow-y:auto; }
+    .title-content { flex-shrink:0; margin-block:auto; }
+    .start-options { display:flex; width:100%; justify-content:center; gap:8px; }
+    .title-screen .start-options button { width:auto; flex:1; min-width:0; min-height:48px; padding:8px 10px;
+      white-space:normal; font-size:15px; }
+    .title-screen .start-options .mode-secondary { background:#1e293b; color:#e0f2fe; box-shadow:none; }
+    #toast { max-width:calc(100% - 20px); white-space:normal; width:max-content; text-align:center; }
+    .assist-option { display:flex; align-items:center; justify-content:center; gap:7px; font-size:14px; }
+    .assist-option input { width:18px; height:18px; accent-color:#38bdf8; }
+    .assist-info { text-align:center; font-size:12px; line-height:1.4; color:#cbd5e1; margin-top:4px; }
+    .mission-panel { background:#172540; border-bottom:1px solid #36547e; padding:6px 10px;
+      display:flex; align-items:center; gap:8px; justify-content:space-between; }
+    .mission-panel > div { flex:1; min-width:0; }
+    .mission-panel strong { font-size:13px; color:#fde68a; }
+    .mission-panel p { font-size:12px; line-height:1.35; margin-top:2px; }
+    .mission-panel button { flex:none; min-height:40px; max-width:46%; white-space:normal; }
+    .mission-panel[hidden], .mission-panel button[hidden], .intro-run .run-score { display:none; }
+    #intro-result .modal-card { text-align:center; }
+    #intro-result p { margin:12px 0; line-height:1.55; }
+    #intro-result button { margin:4px; min-height:44px; padding:8px 14px; border:1px solid #76add5;
+      border-radius:12px; color:#f0f9ff; background:#1e293b; font:inherit; cursor:pointer; }
+    #intro-result .start-btn { background:#0369a1; font-weight:800; }
+    .recipe-missing { color:#fca5a5; }
   </style>
   <link rel="stylesheet" href="./js/platform.css?v=20261125-2" />
 </head>
@@ -307,7 +332,12 @@
       <button type="button" id="pick-archer" aria-pressed="false"><canvas id="archer-preview" width="48" height="54" aria-hidden="true"></canvas>馬尾弓手<span class="hero-card-lv" id="pick-archer-lv">Lv.1</span></button>
     </div>
     <p id="hero-summary"></p>
-    <button class="start-btn" id="btn-start">出發探索 →</button>
+    <div class="start-options" id="start-options">
+      <button class="start-btn" type="button" id="btn-intro">入門探索</button>
+      <button class="start-btn" type="button" id="btn-start">進階探索</button>
+    </div>
+    <p class="assist-info">入門有任務提示，不列入排行榜。進階保留原本的探索與排行榜。</p>
+    <label class="assist-option"><input type="checkbox" id="assist-title" checked>輔助戰鬥</label>
     <button class="platform-button" data-leaderboard-game="chemistry_arpg">🏆 排行榜</button>
     <div class="title-secondary">
       <button class="sub-btn" id="btn-title-codex">圖鑑</button>
@@ -326,6 +356,10 @@
       <span class="run-score"><span>本次探索分數</span> <strong id="run-score">0</strong></span>
       <button class="menu-btn" id="btn-menu">選單</button>
     </div>
+    <section class="mission-panel" id="mission-panel" aria-label="目前任務" hidden>
+      <div><strong id="mission-title" aria-live="polite"></strong><p id="mission-hint"></p></div>
+      <button type="button" class="menu-btn" id="mission-action" hidden></button>
+    </section>
     <div class="elem-bar" id="elem-bar"></div>
     <div class="play-area">
     <div class="stage" id="stage">
@@ -400,6 +434,8 @@
     <div id="tab-status" style="display:none"></div>
     <div id="tab-help" style="display:none"></div>
     </div>
+    <label class="assist-option"><input type="checkbox" id="assist-menu" aria-describedby="assist-menu-info" checked>輔助戰鬥</label>
+    <p class="assist-info" id="assist-menu-info">靠近敵人會自動普攻，不耗元素或 MP。也能隨時手動攻擊。</p>
     <button type="button" class="menu-btn" id="btn-change-hero" hidden>結束本次探索，返回選角</button>
     <button class="menu-btn" id="btn-close-menu" style="width:100%;margin-top:12px;">關閉</button>
   </div>
@@ -419,6 +455,16 @@
     <p style="color:#94a3b8;margin-bottom:16px;">你在探索中倒下了，但收集到的元素與經驗已保存。</p>
     <div data-score-result="death"></div>
     <button class="start-btn" id="btn-death-return" style="font-size:15px;padding:12px 30px;">返回大廳</button>
+  </div>
+</div>
+<!-- Local tutorial result; never attach the competitive score UI. -->
+<div class="modal" id="intro-result" role="dialog" aria-modal="true" aria-labelledby="intro-result-title">
+  <div class="modal-card">
+    <h2 id="intro-result-title"></h2>
+    <p id="intro-result-summary"></p>
+    <button class="start-btn" id="btn-intro-continue">進階探索</button>
+    <button class="sub-btn" id="btn-intro-replay">再玩入門</button>
+    <button class="sub-btn" id="btn-intro-return">返回選角</button>
   </div>
 </div>
 <!-- Victory Modal -->
@@ -516,6 +562,120 @@
     }
   };
 
+  const GAME_ID = 'chemistry_arpg';
+  const ASSIST_KEY = 'chem_arpg_assist_v1', INTRO_KEY = 'chem_arpg_intro_v1';
+  let assistEnabled = true, introSeen = false, legacyPlayer = false;
+  try {
+    assistEnabled = localStorage.getItem(ASSIST_KEY) !== 'off';
+    introSeen = localStorage.getItem(INTRO_KEY) === 'done';
+    legacyPlayer = !!localStorage.getItem('chem_arpg_save');
+  } catch { /* private storage */ }
+  let mission = null, movedThisRun = false, craftedThisRun = false;
+  const questDrops = [{x:4.5,y:6.5,sym:'H'}, {x:7.5,y:4.5,sym:'H'}, {x:11.5,y:6.5,sym:'O'}];
+  const introExit = {x:12.5,y:6.5};
+  function measureEvent(name) { window.GameAnalytics?.event(name, GAME_ID); }
+
+  function refreshStartOptions() {
+    const intro = document.getElementById('btn-intro'), advanced = document.getElementById('btn-start');
+    const quick = introSeen || legacyPlayer;
+    intro.classList.toggle('mode-secondary', quick);
+    advanced.classList.toggle('mode-secondary', !quick);
+    const options = document.getElementById('start-options');
+    options.insertBefore?.(quick ? advanced : intro, quick ? intro : advanced);
+  }
+
+  function setAssist(enabled) {
+    assistEnabled = enabled;
+    for (const id of ['assist-title','assist-menu']) document.getElementById(id).checked = enabled;
+    try { localStorage.setItem(ASSIST_KEY, enabled ? 'on' : 'off'); } catch { /* use in-memory preference */ }
+  }
+
+  function missionTarget() {
+    if (!mission) return null;
+    if (mission.phase === 'collect') {
+      return rooms[2][2].drops.filter(d => d.quest)
+        .sort((a,b) => Math.hypot(a.x-player.x,a.y-player.y)-Math.hypot(b.x-player.x,b.y-player.y))[0] || null;
+    }
+    if (mission.phase === 'guard') {
+      return state.mapX === 2 ? {x:15.25,y:6.5} : (rooms[2][3].monsters[0] || null);
+    }
+    if (mission.phase === 'exit') return state.mapX === 2 ? {x:15.25,y:6.5} : introExit;
+    return null;
+  }
+
+  function updateMissionUI() {
+    const panel = document.getElementById('mission-panel');
+    panel.hidden = !mission;
+    if (!mission) return;
+    const button = document.getElementById('mission-action');
+    const options = {
+      collect: ['1/4 · 收集原子', '移動到金色標記，靠近即可拾取。', null],
+      craft: ['2/4 · 合成水分子', '已有材料，按下按鈕合成。', '合成 H₂O'],
+      heal: ['3/4 · 試用淨化之水', '這是遊戲中的回復技能。試用後，右側通道就會打開。', '使用 H₂O 技能'],
+      guard: ['3/4 · 通過守衛', '往右進入下一間房，靠近並擊倒守衛。關閉輔助時請手動攻擊。', null],
+      exit: ['4/4 · 抵達出口', '走向金色出口，完成這次探索。', null]
+    };
+    const [title, hint, action] = options[mission.phase];
+    const help = mission.phase === 'guard' && state.mapX === 3
+      ? '擊倒守衛。關閉輔助時請手動攻擊。' : hint;
+    document.getElementById('mission-title').textContent = title;
+    document.getElementById('mission-hint').textContent = mission.phase === 'collect' || mission.phase === 'craft'
+      ? hint + '  H：' + mission.H + '/2  O：' + mission.O + '/1' : help;
+    button.hidden = !action;
+    button.textContent = action || '';
+  }
+
+  // Tutorial ingredients are run-local and never spend shared inventory.
+  function missionAction() {
+    if (!mission || state.screen !== 'play' || state.paused || document.hidden) return;
+    if (mission.phase === 'craft' && mission.H === 2 && mission.O === 1) {
+      recordSynthesis(RECIPES[0], false);
+      measureEvent('first_craft');
+      mission.crafted = true;
+      mission.phase = isArcher() ? 'guard' : 'heal';
+      if (isArcher()) openIntroRoute();
+      if (!isArcher()) {
+        // A small practice injury and guaranteed MP make healing possible even with an old build.
+        player.hp = Math.min(player.hp, Math.floor(player.maxHp * 0.7));
+        player.mp = Math.max(player.mp, RECIPES[0].mp);
+      }
+      showToast('H₂O：2 個氫原子和 1 個氧原子。這是分子組成，不是實驗步驟。');
+    } else if (mission.phase === 'heal' && !isArcher()) {
+      useSkill(-1, 'H2O');
+    }
+    updateHUD();
+    updateMissionUI();
+  }
+
+  function openIntroRoute() {
+    const start = rooms[2][2], end = rooms[2][3];
+    // A wider tutorial doorway tolerates imprecise phone joystick alignment.
+    for (const row of [5,6,7]) {
+      start.tiles[row][COLS-1] = TILE.FLOOR;
+      end.tiles[row][0] = TILE.FLOOR;
+    }
+  }
+
+  function finishIntro(completed) {
+    if (!mission || state.screen !== 'play') return;
+    if (completed) {
+      introSeen = true;
+      try { localStorage.setItem(INTRO_KEY, 'done'); } catch { /* session still complete */ }
+      measureEvent('tutorial_complete');
+    }
+    window.GameAnalytics?.end(GAME_ID, {outcome:completed ? 'completed' : 'death'});
+    state.screen = 'intro-result';
+    resetTouchInput();
+    saveGame();
+    document.getElementById('intro-result-title').textContent = completed ? '入門任務完成！' : '探索尚未完成';
+    document.getElementById('intro-result-summary').textContent =
+      (mission.crafted ? '已合成 H₂O。配方與圖鑑已保存。' : '已收集的任務材料') +
+      '  H：' + mission.H + '/2  O：' + mission.O + '/1';
+    document.getElementById('btn-intro-continue').hidden = !completed;
+    document.getElementById('intro-result').classList.add('open');
+    (completed ? document.getElementById('btn-intro-continue') : document.getElementById('btn-intro-replay')).focus?.();
+  }
+
   // === MAP ===
   let rooms = [];
 
@@ -523,6 +683,20 @@
     rooms = Array.from({ length: MAP_H }, () => Array.from({ length: MAP_W }, () => ({
       tiles: [], type: 'normal', generated: false, monsters: [], drops: [], cleared: false
     })));
+    if (mission) {
+      const start = rooms[2][2], end = rooms[2][3];
+      start.type = 'start';
+      end.type = 'training';
+      for (const room of [start,end]) {
+        room.generated = true;
+        room.tiles = Array.from({length:ROWS}, (_,y) => Array.from({length:COLS}, (_,x) =>
+          x === 0 || x === COLS-1 || y === 0 || y === ROWS-1 ? TILE.WALL : TILE.FLOOR));
+      }
+      start.drops = questDrops.map(drop => ({...drop, quest:true, life:Infinity}));
+      end.monsters = [{x:5.2,y:6.5,hp:12,maxHp:12,atk:1,speed:0.65,
+        element:ELEMENTS[0],type:'slime',dotTimer:0,frozen:0,training:true}];
+      return;
+    }
     // Start room at center
     rooms[2][2].type = 'start';
     // Boss room on a random edge
@@ -619,9 +793,11 @@
     const nx = state.mapX + dx;
     const ny = state.mapY + dy;
     if (nx < 0 || nx >= MAP_W || ny < 0 || ny >= MAP_H) return false;
+    if (mission && (ny !== 2 || ![2,3].includes(nx) || !['guard','exit'].includes(mission.phase))) return false;
     state.mapX = nx;
     state.mapY = ny;
     generateRoom(nx, ny);
+    if (mission) updateMissionUI();
     // Clear room-local effects
     projectiles = []; bowFan = null;
     traps = [];
@@ -650,7 +826,7 @@
   let bowInput = null, bowStartedAt = 0;
   const BOW_FIRST_MS = 350, BOW_SECOND_MS = 900;
   const BOW_FAN_FLASH = 0.22;
-  let bowFan = null;
+  let bowFan = null, automaticBowShot = false;
   // Range uses world tiles, not viewport pixels; recovery is game time.
   const BOW_SHOTS = [
     { offsets:[0], range:6, speed:11, damage:0.85, recovery:0.14 },
@@ -662,7 +838,8 @@
   const keys = { up: false, down: false, left: false, right: false, attack: false, shoot: false };
 
   function initPlayer() {
-    player.x = 7.5; player.y = 6;
+    player.x = mission ? 2.5 : 7.5; player.y = mission ? 6.5 : 6;
+    automaticBowShot = false;
     player.dir = 'down';
     player.hp = player.maxHp;
     player.mp = player.maxMp;
@@ -738,7 +915,7 @@
       return;
     }
 
-    if (isArcher() && player.atkTimer > 0) {
+    if (isArcher() && !automaticBowShot && player.atkTimer > 0) {
       player.walking = false;
       return;
     }
@@ -755,15 +932,20 @@
     const spd = player.speed * dt;
     const distance = movePlayerBy(dx * spd, dy * spd);
     player.walking = distance >= 0.0001;
+    if (player.walking && !movedThisRun) {
+      movedThisRun = true;
+      measureEvent('first_move');
+    }
     player.walkPhase = player.walking ? (player.walkPhase + distance / WALK_FRAME_DISTANCE) % 4 : 0;
 
     // Only voluntary input toward the exit can change rooms. Check even if
     // the outer boundary blocked movement after a shove reached the doorway.
     const pc = Math.floor(player.x), pr = Math.floor(player.y);
     let movedRoom = false;
-    if (player.x < 0.5 && (pr === 5 || pr === 6) && dx < 0) {
+    const sideDoor = pr === 5 || pr === 6 || (mission && pr === 7);
+    if (player.x < 0.5 && sideDoor && dx < 0) {
       if ((movedRoom = transitionRoom(-1, 0))) player.x = COLS - 1.5;
-    } else if (player.x > COLS - 0.5 && (pr === 5 || pr === 6) && dx > 0) {
+    } else if (player.x > COLS - 0.5 && sideDoor && dx > 0) {
       if ((movedRoom = transitionRoom(1, 0))) player.x = 1.5;
     } else if (player.y < 0.5 && (pc === 7 || pc === 8) && dy < 0) {
       if ((movedRoom = transitionRoom(0, -1))) player.y = ROWS - 1.5;
@@ -1044,10 +1226,17 @@
       const dx = player.x - d.x;
       const dy = player.y - d.y;
       if (Math.sqrt(dx * dx + dy * dy) < 0.8) {
-        inventory[d.sym] = (inventory[d.sym] || 0) + 1;
+        if (d.quest && mission) {
+          mission[d.sym]++;
+          if (mission.H === 2 && mission.O === 1) mission.phase = 'craft';
+        } else {
+          inventory[d.sym] = (inventory[d.sym] || 0) + 1;
+        }
+        measureEvent('first_pickup');
         room.drops.splice(i, 1);
         playTone(660, 'sine', 0.05);
         showToast(`+1 ${d.sym}`);
+        if (d.quest) updateMissionUI();
         updateElemBar();
         updateHUD();
       }
@@ -1099,11 +1288,16 @@
     const stage = bowStage(performance.now() - bowStartedAt);
     cancelBowCharge(input);
     if (!isArcher() || state.screen !== 'play' || state.paused || document.hidden || player.atkTimer > 0) return;
-    const shot = BOW_SHOTS[stage], facing = DIR_ANGLE[player.dir];
+    fireBow(stage, DIR_ANGLE[player.dir]);
+  }
+
+  function fireBow(stage, facing, automatic = false) {
+    const shot = BOW_SHOTS[stage];
+    automaticBowShot = automatic;
     const volleyHits = new Set();
     if (stage === 1) bowFan = {x:player.x, y:player.y, angle:facing, remaining:BOW_FAN_FLASH};
     player.attackDir = player.dir;
-    player.atkTimer = shot.recovery;
+    player.atkTimer = automatic ? 0.55 : shot.recovery;
     for (const offset of shot.offsets) {
       const angle = facing + offset;
       projectiles.push({kind:'arrow', x:player.x, y:player.y, dx:Math.cos(angle), dy:Math.sin(angle),
@@ -1560,6 +1754,15 @@
 
   function killMonster(room, index) {
     const m = room.monsters[index];
+    if (mission) {
+      room.monsters.splice(index, 1);
+      if (m.training) {
+        mission.phase = 'exit';
+        updateMissionUI();
+      }
+      playTone(520, 'sine', 0.08);
+      return;
+    }
     window.GameScores?.addKill(m.type);
     // Spawn drops
     if (m.type === 'molecular' && m.recipe) {
@@ -1601,20 +1804,54 @@
     }
   }
 
-  function meleeAttack() {
+  // Sample densely enough to cover every crossed tile; a diagonal cannot
+  // clip between two solid corners. Only combat assist uses this constraint.
+  function clearAttackPath(x, y) {
+    const dx = x - player.x, dy = y - player.y;
+    const steps = Math.max(1, Math.ceil(Math.hypot(dx,dy) / 0.08));
+    let col = Math.floor(player.x), row = Math.floor(player.y);
+    for (let i = 1; i <= steps; i++) {
+      const nc = Math.floor(player.x + dx*i/steps), nr = Math.floor(player.y + dy*i/steps);
+      if (isSolid(nc,nr) || (nc !== col && nr !== row && (isSolid(col,nr) || isSolid(nc,row)))) return false;
+      col = nc; row = nr;
+    }
+    return true;
+  }
+
+  function runAssist() {
+    if (!assistEnabled || state.screen !== 'play' || state.paused || document.hidden ||
+        player.atkTimer > 0 || player.knockback || bowInput !== null || meleeQueued || keys.attack) return;
+    const archer = isArcher();
+    let nearest = archer ? BOW_SHOTS[0].range : 1.8, target;
+    for (const monster of rooms[state.mapY][state.mapX].monsters) {
+      const distance = Math.hypot(monster.x-player.x,monster.y-player.y);
+      if (distance <= nearest && clearAttackPath(monster.x, monster.y)) {
+        nearest = distance;
+        target = monster;
+      }
+    }
+    if (!target) return;
+    const dx = target.x-player.x, dy = target.y-player.y;
+    player.dir = Math.abs(dx) >= Math.abs(dy) ? (dx >= 0 ? 'right' : 'left') : (dy >= 0 ? 'down' : 'up');
+    const facing = Math.atan2(dy,dx);
+    if (archer) fireBow(0,facing,true);
+    else meleeAttack(facing);
+  }
+
+  function meleeAttack(assistAngle = null) {
     if (isArcher() || player.atkTimer > 0) return;
     player.atkTimer = 0.3;
     player.attackDir = player.dir;
     playTone(300, 'square', 0.06);
     const room = rooms[state.mapY][state.mapX];
     const angles = { up: -Math.PI / 2, down: Math.PI / 2, left: Math.PI, right: 0 };
-    const atkAngle = angles[player.dir];
+    const atkAngle = assistAngle ?? angles[player.dir];
     for (let i = room.monsters.length - 1; i >= 0; i--) {
       const m = room.monsters[i];
       const dx = m.x - player.x;
       const dy = m.y - player.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 1.8) continue;
+      if (dist > 1.8 || (assistAngle !== null && !clearAttackPath(m.x,m.y))) continue;
       const angle = Math.atan2(dy, dx);
       let diff = angle - atkAngle;
       while (diff > Math.PI) diff -= Math.PI * 2;
@@ -1625,6 +1862,7 @@
         else playTone(400, 'triangle', 0.04);
       }
     }
+    if (assistAngle !== null) return;
     // Break rocks
     const dxDir = { up: 0, down: 0, left: -1, right: 1 };
     const dyDir = { up: -1, down: 1, left: 0, right: 0 };
@@ -1663,6 +1901,8 @@
   // === PLAYER DEATH ===
   function playerDeath() {
     if (state.screen !== 'play') return;
+    if (mission) { finishIntro(false); return; }
+    window.GameAnalytics?.end(GAME_ID, {outcome:'death'});
     state.screen = 'dead';
     window.GameScores?.finish(null, 'death', activeHero);
     resetTouchInput();
@@ -1701,7 +1941,7 @@
   function gameLoop(now) {
     const dt = Math.min((now - lastTime) / 1000, 0.05);
     lastTime = now;
-    if (state.screen === 'play' && !state.paused) {
+    if (state.screen === 'play' && !state.paused && !document.hidden) {
       update(dt);
     }
     render();
@@ -1709,6 +1949,7 @@
   }
 
   function update(dt) {
+    if (state.screen !== 'play' || state.paused || document.hidden) return;
     updatePlayer(dt);
     if (meleeQueued && player.atkTimer <= 0) {
       meleeQueued = false;
@@ -1716,10 +1957,19 @@
     }
     if (keys.attack) { meleeAttack(); keys.attack = false; }
     if (keys.shoot) { shootProjectile(); keys.shoot = false; }
+    runAssist();
+    if (state.screen !== 'play') return;
     updateMonsters(dt);
+    if (state.screen !== 'play') return;
     updateDrops(dt);
     updateProjectiles(dt);
+    if (state.screen !== 'play') return;
     updateTraps(dt);
+    if (state.screen !== 'play') return;
+    if (mission?.phase === 'exit' && state.mapX === 3 && Math.hypot(player.x-introExit.x,player.y-introExit.y) < 0.85) {
+      finishIntro(true);
+      return;
+    }
     // MP regeneration
     player.mp = Math.min(player.maxMp, player.mp + 1.5 * dt);
     updateHUD();
@@ -1741,14 +1991,37 @@
       drawRoom();
       drawMonsters();
       drawDrops();
+      const target = missionTarget();
+      if (target) {
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(target.x*tileSize,target.y*tileSize,tileSize*0.50,0,Math.PI*2);
+        ctx.stroke();
+      }
       drawTrapsAndZones();
       drawCastVisuals();
       drawProjectiles();
       drawPlayer();
       drawBowFan();
       ctx.restore();
+      if (target) drawMissionPointer(target, Math.round(cameraX), Math.round(cameraY));
       drawMinimap();
     }
+  }
+
+  function drawMissionPointer(target, cameraX, cameraY) {
+    const x = target.x*tileSize-cameraX, y = target.y*tileSize-cameraY;
+    const padding = 18;
+    if (x >= padding && y >= padding && x <= viewWidth-padding && y <= viewHeight-padding) return;
+    ctx.save();
+    ctx.translate(Math.max(padding,Math.min(viewWidth-padding,x)),Math.max(padding,Math.min(viewHeight-padding,y)));
+    ctx.rotate(Math.atan2(y-viewHeight/2,x-viewWidth/2));
+    ctx.beginPath();
+    ctx.moveTo(9,0); ctx.lineTo(-6,-7); ctx.lineTo(-6,7); ctx.closePath();
+    ctx.fillStyle = '#fde047'; ctx.fill();
+    ctx.strokeStyle = '#422006'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.restore();
   }
 
   // === KEYBOARD INPUT ===
@@ -1761,7 +2034,8 @@
   }
   window.addEventListener('keydown', (e) => {
     if (e.target?.closest?.('input,textarea,select,[contenteditable]')) return;
-    if (state.screen !== 'play' || state.paused) return;
+    if (state.screen !== 'play' || state.paused || document.hidden) return;
+    if (e.target?.id === 'mission-action' && ['Enter',' '].includes(e.key)) return;
     const actionKey = gameKey(e);
     if (isArcher() && ['z', 'Z', ' '].includes(actionKey)) {
       e.preventDefault();
@@ -1804,9 +2078,16 @@
   });
 
   // === BUTTON HANDLERS ===
-  document.getElementById('btn-start').addEventListener('click', () => {
-    window.GameScores?.begin('chemistry_arpg');
+  function beginExploration(mode) {
+    if (state.screen !== 'title' || state.paused || document.hidden) return;
+    mission = mode === 'intro' ? {phase:'collect',H:0,O:0,crafted:false} : null;
+    movedThisRun = false;
+    craftedThisRun = false;
+    if (!mission) window.GameScores?.begin(GAME_ID);
     activeHero = chosenHero;
+    window.GameAnalytics?.start(GAME_ID, {mode,hero:activeHero});
+    document.getElementById('game-screen').classList.toggle('intro-run', !!mission);
+    updateMissionUI();
     const archer = isArcher();
     document.getElementById('game-screen').classList.toggle('archer-run', archer);
     const attack = document.getElementById('btn-atk');
@@ -1824,7 +2105,16 @@
     resizeCanvas();
     updateElemBar();
     updateHUD();
-  });
+  }
+  document.getElementById('btn-start').addEventListener('click', () => beginExploration('classic'));
+  document.getElementById('btn-intro').addEventListener('click', () => beginExploration('intro'));
+  document.getElementById('mission-action').addEventListener('click', missionAction);
+  for (const id of ['assist-title','assist-menu']) {
+    document.getElementById(id).addEventListener('change', e => setAssist(e.target.checked));
+  }
+  document.getElementById('btn-intro-return').addEventListener('click', returnToTitle);
+  document.getElementById('btn-intro-replay').addEventListener('click', () => { returnToTitle(); beginExploration('intro'); });
+  document.getElementById('btn-intro-continue').addEventListener('click', () => { returnToTitle(); beginExploration('classic'); });
 
   // === SAVE / LOAD ===
   const SAVE_KEY = 'chem_arpg_save';
@@ -1939,17 +2229,17 @@
     });
   }
 
-  function useSkill(slotIdx) {
+  function useSkill(slotIdx, taskSkill = null) {
     if (isArcher()) return;
     if (state.screen !== 'play' || state.paused) return;
-    const skillId = equippedSkills[slotIdx];
+    const skillId = taskSkill ?? equippedSkills[slotIdx];
     if (!skillId) {
       showToast('技能尚未解鎖：請到選單 → 背包合成化合物');
       return;
     }
     const recipe = RECIPES.find(r => r.id === skillId);
     if (!recipe) return;
-    selectedSkillSlot = slotIdx;
+    if (!taskSkill) selectedSkillSlot = slotIdx;
     updateHUD();
     if (player.mp < recipe.mp) {
       showToast(`MP 不足：${recipe.name}需要 ${recipe.mp} MP`);
@@ -1966,6 +2256,11 @@
       case 'heal':
         player.hp = Math.min(player.maxHp, player.hp + Math.floor(player.maxHp * 0.3));
         showToast('淨化之水：HP 回復！');
+        if (mission?.phase === 'heal') {
+          mission.phase = 'guard';
+          openIntroRoute();
+          updateMissionUI();
+        }
         break;
       case 'aoe': {
         const dmg = player.atk * 3;
@@ -2084,6 +2379,8 @@
   // === BOSS VICTORY & RETURN TO TITLE ===
   function bossVictory() {
     if (state.screen !== 'play') return;
+    if (mission) return;
+    window.GameAnalytics?.end(GAME_ID, {outcome:'victory'});
     state.screen = 'victory';
     window.GameScores?.finish(null, 'victory', activeHero);
     resetTouchInput();
@@ -2095,8 +2392,13 @@
   }
 
   function returnToTitle() {
+    if (state.screen === 'play') window.GameAnalytics?.end(GAME_ID, {outcome:'quit'});
     closeMenu();
     state.screen = 'title';
+    mission = null;
+    updateMissionUI();
+    refreshStartOptions();
+    document.getElementById('intro-result').classList.remove('open');
     Object.keys(keys).forEach(key => { keys[key] = false; });
     resetTouchInput();
     resetPlayerMotion();
@@ -2134,7 +2436,17 @@
     }
     // Consume
     for (const [sym, count] of Object.entries(recipe.req)) inventory[sym] -= count;
-    // Unlock
+    recordSynthesis(recipe, true);
+    renderInventoryTab();
+    renderCodexTab();
+  }
+
+  function recordSynthesis(recipe, repeatExperience) {
+    const recipeId = recipe.id;
+    if (!mission && state.screen === 'play' && !craftedThisRun) {
+      craftedThisRun = true;
+      measureEvent('first_craft');
+    }
     const firstTime = !codex.includes(recipeId);
     if (firstTime) {
       codex.push(recipeId);
@@ -2144,15 +2456,16 @@
       if (emptySlot >= 0) equippedSkills[emptySlot] = recipeId;
       gainExp(recipe.pts);
       showToast(`圖鑑解鎖：${recipe.formula} ${recipe.name}！`);
-    } else {
+    } else if (repeatExperience) {
       gainExp(50);
       showToast(`合成 ${recipe.formula} +50 EXP`);
+    }
+    if (firstTime && recipeId === 'H2O') {
+      showToast('H₂O：2 個氫原子和 1 個氧原子。這是分子組成，不是實驗步驟。');
     }
     updateElemBar();
     updateHUD();
     saveGame();
-    renderInventoryTab();
-    renderCodexTab();
   }
 
   // Expose synth function for onclick
@@ -2243,7 +2556,12 @@
       `查看完整週期表 ↗ · 已納入 ${ELEMENTS.length} / 118 種元素</button>`;
     html += '<h3 style="margin-bottom:10px;">合成配方</h3>';
     RECIPES.forEach(r => {
-      const reqStr = Object.entries(r.req).map(([k, v]) => `${k}×${v}`).join(' + ');
+      const reqStr = Object.entries(r.req).map(([sym, required]) => {
+        const current = inventory[sym] || 0;
+        const shortage = Math.max(0, required - current);
+        return '<span' + (shortage ? ' class="recipe-missing"' : '') + '>' + sym + '：' + current + '/' + required +
+          (shortage ? ' (缺少 ' + shortage + ')' : '') + '</span>';
+      }).join(' · ');
       const canSynth = Object.entries(r.req).every(([sym, count]) => (inventory[sym] || 0) >= count);
       html += `<div class="recipe-row"><div><strong style="color:#38bdf8;">${r.formula}</strong> ${r.name}` +
         `<div style="font-size:11px;color:#94a3b8;">${reqStr}</div></div>` +
@@ -2403,7 +2721,7 @@
       if (e.key === 'Escape') { e.preventDefault(); detailDialog.close(); }
       return;
     }
-    if (e.key === 'i' || e.key === 'I' || e.key === 'Tab') {
+    if (e.key === 'i' || e.key === 'I' || (e.key === 'Tab' && !mission)) {
       e.preventDefault();
       if (document.getElementById('menu-modal').classList.contains('open')) closeMenu();
       else if (state.screen === 'play') openMenu();
@@ -2482,6 +2800,7 @@
   }
   function resetTouchInput() {
     resetJoystick();
+    for (const key of Object.keys(keys)) keys[key] = false;
     cancelBowCharge();
     bowFan = null;
     meleeQueued = false;
@@ -2558,6 +2877,14 @@
         ctx.fillRect(ox + x * ms, oy + y * ms, ms - 1, ms - 1);
       }
     }
+    if (missionTarget()) {
+      const targetX = ['guard','exit'].includes(mission.phase) ? 3 : 2;
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#fde047';
+      ctx.beginPath();
+      ctx.arc(ox + (targetX + 0.5) * ms, oy + 2.5 * ms, Math.max(2,ms * 0.25), 0, Math.PI*2);
+      ctx.fill();
+    }
     ctx.globalAlpha = 1;
     ctx.strokeStyle = '#e0f2fe';
     ctx.lineWidth = 2;
@@ -2602,6 +2929,8 @@
   new ResizeObserver(resizeCanvas).observe(document.getElementById('stage'));
   resizeCanvas();
   loadGame();
+  for (const id of ['assist-title','assist-menu']) document.getElementById(id).checked = assistEnabled;
+  refreshStartOptions();
   document.getElementById('pick-mage').addEventListener('click', () => chooseHero('mage'));
   document.getElementById('pick-archer').addEventListener('click', () => chooseHero('archer'));
   const archerPreview = document.getElementById('archer-preview').getContext('2d');

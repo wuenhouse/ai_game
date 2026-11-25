@@ -7,8 +7,10 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-7BKPPQVQWR');
+    gtag('config', 'G-7BKPPQVQWR', { allow_google_signals: false, allow_ad_personalization_signals: false });
   </script>
+  <script src="./js/game-analytics.js?v=20261125-3"></script>
+  <script>window.GameAnalytics?.enter('chemistry_tetris');</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -104,7 +106,7 @@
 <body>
 <div id="app">
   <div class="header">
-    <a href="./index.html" class="back-link">← 回大廳</a>
+    <a href="./index.html" id="btn-back-to-lobby" class="back-link">← 回大廳</a>
     <div class="hud">
       <div>分數 <span id="score">0</span></div>
       <div>消行 <span id="lines">0</span></div>
@@ -353,6 +355,7 @@
     }
 
     if (toRemove.length > 0) {
+      window.GameAnalytics?.event('first_craft', 'chemistry_tetris');
       toRemove.forEach(p => { grid[p.r][p.c] = null; });
       // 重力下落填補空缺
       for (let c = 0; c < COLS; c++) {
@@ -390,7 +393,8 @@
   }
 
   function holdCurrent() {
-    if (!canHold || gameOver) return;
+    if (!canHold || !canPlayTetris()) return;
+    trackTetrisPlay();
     canHold = false;
     const temp = { matrix: current.matrix, x: 3, y: 0 };
     if (!holdPiece) {
@@ -408,6 +412,7 @@
   function endGame() {
     if (gameOver) return;
     gameOver = true;
+    window.GameAnalytics?.end('chemistry_tetris', { outcome:'gameover' });
     window.GameScores.finish(score, 'gameover');
     document.getElementById('final-score').textContent = score;
     document.getElementById('gameover-modal').classList.add('open');
@@ -486,40 +491,50 @@
   }
 
   // 操控函式
-  function moveLeft() { if (!gameOver && !collide(current, -1, 0)) { current.x--; beep(280, 0.03); } }
-  function moveRight() { if (!gameOver && !collide(current, 1, 0)) { current.x++; beep(280, 0.03); } }
-  function softDrop() {
-    if (gameOver) return;
+  // Initialized boards and gravity do not count as a player starting a game.
+  const canPlayTetris = () => !gameOver && !window.GameScores.blocked && !document.hidden &&
+    !document.getElementById('guide-modal').classList.contains('open');
+  const trackTetrisPlay = () => window.GameAnalytics?.start('chemistry_tetris');
+  function moveLeft() { if (canPlayTetris() && !collide(current, -1, 0)) { trackTetrisPlay(); current.x--; beep(280, 0.03); } }
+  function moveRight() { if (canPlayTetris() && !collide(current, 1, 0)) { trackTetrisPlay(); current.x++; beep(280, 0.03); } }
+  function softDrop(automatic = false) {
+    if (!canPlayTetris()) return;
+    if (!automatic) trackTetrisPlay();
     if (!collide(current, 0, 1)) { current.y++; }
     else { lockPiece(); }
   }
   function hardDrop() {
-    if (gameOver) return;
+    if (!canPlayTetris()) return;
+    trackTetrisPlay();
     while (!collide(current, 0, 1)) current.y++;
     lockPiece();
   }
   function rotatePiece() {
-    if (gameOver) return;
+    if (!canPlayTetris()) return;
     const rotated = rotateMatrix(current.matrix);
-    if (!collide(current, 0, 0, rotated)) { current.matrix = rotated; beep(360, 0.04); }
-    else if (!collide(current, -1, 0, rotated)) { current.x--; current.matrix = rotated; }
-    else if (!collide(current, 1, 0, rotated)) { current.x++; current.matrix = rotated; }
+    if (!collide(current, 0, 0, rotated)) { trackTetrisPlay(); current.matrix = rotated; beep(360, 0.04); }
+    else if (!collide(current, -1, 0, rotated)) { trackTetrisPlay(); current.x--; current.matrix = rotated; }
+    else if (!collide(current, 1, 0, rotated)) { trackTetrisPlay(); current.x++; current.matrix = rotated; }
   }
 
   // 按鈕與鍵盤綁定
-  document.getElementById('btn-left').addEventListener('pointerdown', (e) => { e.preventDefault(); moveLeft(); });
-  document.getElementById('btn-right').addEventListener('pointerdown', (e) => { e.preventDefault(); moveRight(); });
-  document.getElementById('btn-down').addEventListener('pointerdown', (e) => { e.preventDefault(); softDrop(); });
-  document.getElementById('btn-drop').addEventListener('pointerdown', (e) => { e.preventDefault(); hardDrop(); });
-  document.getElementById('btn-rot').addEventListener('pointerdown', (e) => { e.preventDefault(); rotatePiece(); });
-  document.getElementById('hold-canvas').parentElement.addEventListener('pointerdown', holdCurrent);
+  document.getElementById('btn-left').addEventListener('pointerdown', (e) => { if (e.button !== 0) return; e.preventDefault(); moveLeft(); });
+  document.getElementById('btn-right').addEventListener('pointerdown', (e) => { if (e.button !== 0) return; e.preventDefault(); moveRight(); });
+  document.getElementById('btn-down').addEventListener('pointerdown', (e) => { if (e.button !== 0) return; e.preventDefault(); softDrop(); });
+  document.getElementById('btn-drop').addEventListener('pointerdown', (e) => { if (e.button !== 0) return; e.preventDefault(); hardDrop(); });
+  document.getElementById('btn-rot').addEventListener('pointerdown', (e) => { if (e.button !== 0) return; e.preventDefault(); rotatePiece(); });
+  document.getElementById('hold-canvas').parentElement.addEventListener('pointerdown', (e) => { if (e.button === 0) holdCurrent(); });
 
   // 棋盤直接觸控滑動手勢
-  let tStartX = 0, tStartY = 0, tMoved = false;
+  let tStartX = 0, tStartY = 0, tMoved = false, tPointer = null;
   boardCanvas.addEventListener('pointerdown', (e) => {
+    if (tPointer !== null || e.button !== 0 || !canPlayTetris()) return;
+    tPointer = e.pointerId;
+    boardCanvas.setPointerCapture?.(e.pointerId);
     tStartX = e.clientX; tStartY = e.clientY; tMoved = false;
   });
   boardCanvas.addEventListener('pointermove', (e) => {
+    if (tPointer !== e.pointerId) return;
     const dx = e.clientX - tStartX, dy = e.clientY - tStartY;
     if (Math.abs(dx) > cellSize) {
       dx > 0 ? moveRight() : moveLeft();
@@ -530,13 +545,20 @@
     }
   });
   boardCanvas.addEventListener('pointerup', (e) => {
+    if (tPointer !== e.pointerId) return;
+    tPointer = null;
     const dy = e.clientY - tStartY;
     if (!tMoved && Math.abs(dy) < 12) rotatePiece();
     else if (dy > 75) hardDrop();
   });
 
+  for (const type of ['pointercancel', 'lostpointercapture']) {
+    boardCanvas.addEventListener(type, (e) => { if (tPointer === e.pointerId) tPointer = null; });
+  }
+
   window.addEventListener('keydown', (e) => {
-    if (window.GameScores.blocked || e.target?.closest?.('input,textarea,select,[contenteditable]')) return;
+    if (e.metaKey || e.ctrlKey || e.altKey || !canPlayTetris() ||
+        e.target?.closest?.('input,textarea,select,[contenteditable]')) return;
     if (e.key === 'ArrowLeft') moveLeft();
     else if (e.key === 'ArrowRight') moveRight();
     else if (e.key === 'ArrowDown') softDrop();
@@ -545,6 +567,7 @@
     else if (e.key.toLowerCase() === 'c') holdCurrent();
   });
 
+  document.getElementById('btn-back-to-lobby').addEventListener('click', () => window.GameAnalytics?.end('chemistry_tetris', { outcome:'quit' }));
   document.getElementById('btn-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.add('open'));
   document.getElementById('btn-close-guide').addEventListener('click', () => document.getElementById('guide-modal').classList.remove('open'));
   document.getElementById('btn-restart').addEventListener('click', () => {
@@ -561,8 +584,8 @@
   spawnPiece();
   let lastDrop = 0;
   function loop(now) {
-    if (!gameOver && !window.GameScores.blocked && now - lastDrop > 750) {
-      softDrop();
+    if (canPlayTetris() && now - lastDrop > 750) {
+      softDrop(true);
       lastDrop = now;
     }
     render();

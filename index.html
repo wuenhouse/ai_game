@@ -7,8 +7,9 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-    gtag('config', 'G-7BKPPQVQWR');
+    gtag('config', 'G-7BKPPQVQWR', { allow_google_signals: false, allow_ad_personalization_signals: false });
   </script>
+  <script src="./js/game-analytics.js?v=20261125-3"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -232,7 +233,7 @@
         </div>
       </div>
       <p class="card-desc">深入地下化學實驗室，用短杖近戰、發射六種元素彈，收集元素並合成技能。</p>
-      <a class="play-btn" href="./chemistry_arpg.html">開始探索 →</a>
+      <a class="play-btn" href="./chemistry_arpg.html" data-game-select="chemistry_arpg">開始探索 →</a>
       <button class="platform-button" data-leaderboard-game="chemistry_arpg">🏆 排行榜</button>
       <button type="button" class="feedback-entry" data-feedback-game="chemistry_arpg">💬 意見與討論</button>
     </article>
@@ -246,7 +247,7 @@
         </div>
       </div>
       <p class="card-desc">單指滑動方塊轉動切片層、滑動背景旋轉視角。在任意一面湊齊 H₂O、CO₂、CaCO₃ 等化合物觸發粒子反應！</p>
-      <a class="play-btn" href="./chemistry_rubiks_cube.html">開始遊玩 3D 魔術方塊 →</a>
+      <a class="play-btn" href="./chemistry_rubiks_cube.html" data-game-select="chemistry_rubiks_cube">開始遊玩 3D 魔術方塊 →</a>
       <button type="button" class="feedback-entry" data-feedback-game="chemistry_rubiks_cube">💬 意見與討論</button>
     </article>
 
@@ -259,7 +260,7 @@
         </div>
       </div>
       <p class="card-desc">經典消行結合相鄰原子自動合成引爆！支援底部虛擬按鍵與棋盤手勢滑動，挑戰連續重力反應 Combo。</p>
-      <a class="play-btn" href="./chemistry_tetris.html">開始遊玩化學俄羅斯方塊 →</a>
+      <a class="play-btn" href="./chemistry_tetris.html" data-game-select="chemistry_tetris">開始遊玩化學俄羅斯方塊 →</a>
       <button class="platform-button" data-leaderboard-game="chemistry_tetris">🏆 排行榜</button>
       <button type="button" class="feedback-entry" data-feedback-game="chemistry_tetris">💬 意見與討論</button>
     </article>
@@ -290,6 +291,11 @@
     <section id="feedback-list" aria-label="討論主題"></section>
     <button type="button" id="feedback-older" class="feedback-action" hidden>載入更早的主題</button>
   </dialog>
+  <script>
+    document.querySelectorAll('[data-game-select]').forEach(link => {
+      link.addEventListener('click', () => window.GameAnalytics?.select(link.dataset.gameSelect));
+    });
+  </script>
   <script type="module" src="./js/feedback.js?v=20261125-2"></script>
 <script type="module" src="./js/scores.js?v=20261125-2"></script>
 </body>
